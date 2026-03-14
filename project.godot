@@ -1,0 +1,40 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="CS89"
+run/main_scene="uid://borapox5b1y7w"
+config/features=PackedStringArray("4.6", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Client="*uid://st5hptvwy46a"
+Multiplayer="*uid://d0nxsp8oadvsk"
+Server="*uid://byisbyvlth6f5"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/GDTask/plugin.cfg", "res://addons/cwispy_2/plugin.cfg")
+
+[file_customization]
+
+folder_colors={
+"res://addons/GDTask/": "gray"
+}
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
