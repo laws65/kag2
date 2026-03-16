@@ -4,3 +4,12 @@
 
 [node name="Main" type="Node" unique_id=1648924525]
 script = ExtResource("1_bnsfs")
+
+[node name="Players" type="Node" parent="." unique_id=614460621]
+
+[node name="Label" type="Label" parent="." unique_id=1911907176]
+offset_left = 242.0
+offset_top = 129.0
+offset_right = 834.0
+offset_bottom = 618.0
+theme_override_font_sizes/font_size = 32

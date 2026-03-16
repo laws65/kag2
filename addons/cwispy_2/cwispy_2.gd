@@ -7,12 +7,14 @@ func _enable_plugin() -> void:
 	add_autoload_singleton("Client", "singletons/client.gd")
 	add_autoload_singleton("Multiplayer", "singletons/multiplayer.gd")
 	add_autoload_singleton("Server", "singletons/server.gd")
+	add_autoload_singleton("Players", "singletons/player_manager.gd")
 
 
 func _disable_plugin() -> void:
 	remove_autoload_singleton("Client")
 	remove_autoload_singleton("Multiplayer")
 	remove_autoload_singleton("Server")
+	remove_autoload_singleton("Players")
 
 
 func _enter_tree() -> void:

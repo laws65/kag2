@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 Client="*uid://st5hptvwy46a"
 Multiplayer="*uid://d0nxsp8oadvsk"
 Server="*uid://byisbyvlth6f5"
+Players="*uid://xkk8sm8l3lie"
 
 [editor_plugins]
 

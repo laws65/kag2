@@ -1,6 +1,9 @@
 extends Node
 
 
+var get_join_data_callable: Callable
+
+
 func join_server(address: String="localhost", port: int=50301) -> void:
 	var peer := ENetMultiplayerPeer.new()
 	
@@ -33,3 +36,25 @@ func _on_connection_failed() -> void:
 
 func _on_server_disconnected() -> void:
 	print("Server disconnected")
+
+
+@rpc("authority", "reliable")
+func send_join_data() -> void:
+	assert(get_join_data_callable, "Developer must set Client.get_join_data_callable!")
+	var join_data := get_join_data_callable.call()
+	Server.receive_client_join_data.rpc_id(1, join_data)
+
+
+@rpc("authority", "reliable")
+func receive_server_kick(reason: String) -> void:
+	print("Kicked from server for reason: ", reason)
+	multiplayer.multiplayer_peer.close()
+
+
+@rpc("authority", "reliable")
+func receive_initial_state(serialised_players: Array[PackedByteArray]) -> void:
+	for serialised_player in serialised_players:
+		var deserialised_player := Player.deserialise(serialised_player)
+		Players.add_old_player(deserialised_player)
+	
+	Server.client_finished_loading.rpc_id(1)
