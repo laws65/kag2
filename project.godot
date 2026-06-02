@@ -25,6 +25,10 @@ Players="*uid://xkk8sm8l3lie"
 SyncManager="*uid://bhc3elhd6wkhe"
 Blobs="*uid://bedr0nkdq8rsr"
 
+[display]
+
+window/vsync/vsync_mode=0
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/GDTask/plugin.cfg", "res://addons/cwispy_2/plugin.cfg")
@@ -60,6 +64,7 @@ move_down={
 
 [physics]
 
+common/physics_ticks_per_second=20
 3d/physics_engine="Jolt Physics"
 
 [rendering]

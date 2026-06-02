@@ -18,8 +18,19 @@ offset_top = 264.0
 offset_right = -523.0
 offset_bottom = 287.0
 
+[node name="Label3" type="Label" parent="." unique_id=1850321564]
+offset_left = -558.0
+offset_top = -290.0
+offset_right = -518.0
+offset_bottom = -267.0
+
+[node name="FPSTimer" type="Timer" parent="Label3" unique_id=5333090]
+autostart = true
+
 [node name="World" type="Node2D" parent="." unique_id=1048000910]
 
 [node name="Blobs" type="Node2D" parent="World" unique_id=877208775]
 
 [node name="Camera2D" type="Camera2D" parent="World" unique_id=210476563]
+
+[connection signal="timeout" from="Label3/FPSTimer" to="." method="_on_fps_timer_timeout"]

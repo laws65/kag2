@@ -31,8 +31,8 @@ func _on_Player_joined(new_player: Player) -> void:
 	if multiplayer.is_server():
 		var blob := Blobs.server_create_blob("res://src/common/test_blob/test_blob.tscn")
 		blob.server_set_player(new_player)
-	elif new_player.get_id() == multiplayer.get_unique_id():
-		$Label2.text = "You are %s" % multiplayer.get_unique_id()
+	elif new_player.get_id() == Client.get_my_id():
+		$Label2.text = "You are %s" % Client.get_my_id()
 
 
 func _on_Player_left(_old_player: Player) -> void:
@@ -45,3 +45,7 @@ func _rebuild_player_list() -> void:
 	for player in players:
 		$Label.text += player.get_prop("username") + "- " + str(player.get_id()) + "\n"
 		print(player.get_id())
+
+
+func _on_fps_timer_timeout() -> void:
+	$Label3.text = "FPS: %s" % int(Engine.get_frames_per_second())

@@ -114,9 +114,9 @@ func _on_peer_disconnected(player_id: int) -> void:
 
 func register_player(player_id: int, extra_data: Dictionary) -> void:
 	assert(multiplayer.is_server())
-	Players.register_player.rpc_id(0, player_id, extra_data)
+	Players.register_player.rpc(player_id, extra_data)
 
 
 func deregister_player(player_id: int) -> void:
 	assert(multiplayer.is_server())
-	Players.deregister_player.rpc_id(0, player_id)
+	Players.deregister_player.rpc(player_id)

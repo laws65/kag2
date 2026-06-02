@@ -51,17 +51,35 @@ func server_set_blob(new_blob: Blob) -> void:
 
 func server_set_blob_id(new_blob_id: int) -> void:
 	assert(multiplayer.is_server())
-	_set_blob_id.rpc_id(0, new_blob_id)
+	_set_blob_id.rpc(new_blob_id)
 
 
 @rpc("call_local", "reliable", "authority")
-func _set_blob_id(new_blob_id: int, notify_own_player: bool = true) -> void:
+func _set_blob_id(new_blob_id: int, notify_own_blob: bool = true) -> void:
 	var old_blob_id := _blob_id
 	_blob_id = new_blob_id
 
-	if not notify_own_player:
-		return
+	if notify_own_blob:
+		var old_blob := Blobs.get_blob_by_id(old_blob_id)
+		if old_blob:
+			old_blob._set_player_id(-1, false)
 
-	var old_blob := Players.get_player_by_id(old_blob_id)
-	if old_blob:
-		old_blob._set_player_id(-1, false)
+		var new_blob := Blobs.get_blob_by_id(new_blob_id)
+		if new_blob:
+			new_blob._set_player_id(get_id(), false)
+
+
+func has_blob() -> bool:
+	return is_instance_valid(get_blob())
+
+
+func get_blob_id() -> int:
+	return _blob_id
+
+
+func get_blob() -> Blob:
+	return Blobs.get_blob_by_id(_blob_id)
+
+
+func is_my_player() -> bool:
+	return get_id() == Client.get_my_id()

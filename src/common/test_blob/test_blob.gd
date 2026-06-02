@@ -4,13 +4,13 @@ extends Blob
 
 func _ready() -> void:
 	if has_player():
-		$Label.text = get_player().get_id()
+		$Label.text = str(get_player().get_id())
 
 
 func _physics_process(_delta: float) -> void:
 	if is_my_blob() and client_controlled:
 		var input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-		velocity = input * 50
+		velocity = input * 750
 		move_and_slide()
 
 

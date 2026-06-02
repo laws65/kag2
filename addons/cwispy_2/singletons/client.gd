@@ -3,6 +3,17 @@ extends Node
 
 var get_join_data_callable: Callable
 
+var connected_to_server := false
+
+
+func _ready() -> void:
+	Players.new_player_joined.connect(_on_Player_joined)
+
+
+func _on_Player_joined(player: Player) -> void:
+	if player.is_my_player():
+		connected_to_server = true
+
 
 func join_server(address: String="localhost", port: int=50301) -> void:
 	var peer := ENetMultiplayerPeer.new()
@@ -53,7 +64,6 @@ func receive_server_kick(reason: String) -> void:
 
 @rpc("authority", "reliable")
 func receive_initial_state(initial_state: Dictionary) -> void:
-
 	var serialised_players: Array[PackedByteArray] = initial_state["players"]
 	for serialised_player in serialised_players:
 		var deserialised_player := Player.deserialise(serialised_player)
@@ -66,3 +76,23 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 		Blobs._create_server_blob(filepath, spawn_data, false)
 
 	Server.client_finished_loading.rpc_id(1)
+
+
+func get_my_id() -> int:
+	return multiplayer.get_unique_id()
+
+
+func get_my_player() -> Player:
+	return Players.get_player_by_id(get_my_id())
+
+
+func has_blob() -> bool:
+	return get_my_player().has_blob()
+
+
+func get_my_blob() -> Blob:
+	return get_my_player().get_blob()
+
+
+func get_my_blob_id() -> int:
+	return get_my_player().get_blob_id()

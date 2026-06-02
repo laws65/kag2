@@ -54,7 +54,7 @@ func interpolate_snapshot(
 	interpolation_delta: float
 ) -> void:
 	for prop in new_snapshot.keys():
-		set(prop, lerp(old_snapshot, new_snapshot, interpolation_delta))
+		set(prop, lerp(old_snapshot[prop], new_snapshot[prop], interpolation_delta))
 
 
 func server_set_player(new_player: Player) -> void:
@@ -67,18 +67,21 @@ func server_set_player(new_player: Player) -> void:
 
 func server_set_player_id(new_player_id: int) -> void:
 	assert(multiplayer.is_server())
-	_set_player_id.rpc_id(0, new_player_id)
+	_set_player_id.rpc(new_player_id)
 
 
 @rpc("call_local", "reliable", "authority")
-func _set_player_id(new_player_id: int, notify_own_blob: bool = true) -> void:
+func _set_player_id(new_player_id: int, notify_own_player: bool = true) -> void:
 	var old_player_id := _player_id
 	_player_id = new_player_id
 
-	if notify_own_blob:
+	if notify_own_player:
 		var old_player := Players.get_player_by_id(old_player_id)
 		if old_player:
 			old_player._set_blob_id(-1, false)
+		var new_player := Players.get_player_by_id(new_player_id)
+		if new_player:
+			new_player._set_blob_id(get_id(), false)
 
 	player_id_changed.emit(old_player_id, new_player_id)
 
@@ -96,4 +99,4 @@ func has_player() -> bool:
 
 
 func is_my_blob() -> bool:
-	return not multiplayer.is_server() and get_player_id() == multiplayer.get_unique_id()
+	return not multiplayer.is_server() and get_player_id() == Client.get_my_id()
