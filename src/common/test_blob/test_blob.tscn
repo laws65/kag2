@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://6in4haiqmik2"]
+
+[ext_resource type="Script" uid="uid://b5313awcorpct" path="res://src/common/test_blob/test_blob.gd" id="1_5gim2"]
+[ext_resource type="Texture2D" uid="uid://k51rldx3p8yo" path="res://icon.svg" id="2_5gim2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_w8jvj"]
+size = Vector2(125, 125)
+
+[node name="TestBlob" type="CharacterBody2D" unique_id=62934992]
+script = ExtResource("1_5gim2")
+client_controlled = true
+metadata/_custom_type_script = "uid://bk0d7x26sdivv"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1748626683]
+shape = SubResource("RectangleShape2D_w8jvj")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=743564946]
+texture = ExtResource("2_5gim2")
+
+[node name="Label" type="Label" parent="." unique_id=429761544]
+offset_left = -48.0
+offset_top = -94.0
+offset_right = 51.0
+offset_bottom = -71.0
+
+[connection signal="player_id_changed" from="." to="." method="_on_player_id_changed"]

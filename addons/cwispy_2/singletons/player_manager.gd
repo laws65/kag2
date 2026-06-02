@@ -37,7 +37,7 @@ func deregister_player(player_id: int) -> void:
 	var player := get_player_by_id(player_id)
 	if not player:
 		return
-		
+
 	_players_parent.remove_child(player)
 	player.queue_free()
 	player_left.emit(player)

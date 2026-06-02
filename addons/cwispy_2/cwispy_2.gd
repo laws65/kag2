@@ -2,19 +2,24 @@
 extends EditorPlugin
 
 
+const autoloads := {
+	"Client": "client.gd",
+	"Multiplayer": "multiplayer.gd",
+	"Server": "server.gd",
+	"Players": "player_manager.gd",
+	"SyncManager": "sync_manager.gd",
+	"Blobs": "blob_manager.gd",
+}
+
+
 func _enable_plugin() -> void:
-	print("plugin loading")
-	add_autoload_singleton("Client", "singletons/client.gd")
-	add_autoload_singleton("Multiplayer", "singletons/multiplayer.gd")
-	add_autoload_singleton("Server", "singletons/server.gd")
-	add_autoload_singleton("Players", "singletons/player_manager.gd")
+	for autoload in autoloads.keys():
+		add_autoload_singleton(autoload, "singletons/%s" % autoloads[autoload])
 
 
 func _disable_plugin() -> void:
-	remove_autoload_singleton("Client")
-	remove_autoload_singleton("Multiplayer")
-	remove_autoload_singleton("Server")
-	remove_autoload_singleton("Players")
+	for autoload in autoloads.keys():
+		remove_autoload_singleton(autoload)
 
 
 func _enter_tree() -> void:

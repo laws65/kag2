@@ -1,0 +1,99 @@
+extends CharacterBody2D
+class_name Blob
+
+
+signal player_id_changed(old_player_id: int, new_player_id: int)
+
+@export var props_to_track_per_snapshot: Array[String] = ["position"]
+@export var props_to_spawn_with: Array[String] = ["position", "_player_id"]
+
+@export var client_controlled: bool = false
+
+var _player_id := -1
+
+
+func set_id(new_id: int) -> void:
+	name = str(new_id)
+
+
+func get_id() -> int:
+	return int(name)
+
+
+func get_spawn_data() -> Dictionary:
+	var spawn_data: Dictionary
+	for spawn_data_name in props_to_spawn_with:
+		spawn_data[spawn_data_name] = get(spawn_data_name)
+	spawn_data["id"] = get_id()
+	return spawn_data
+
+
+func set_spawn_data(spawn_data: Dictionary) -> void:
+	for key in spawn_data.keys():
+		if key == "id":
+			set_id(spawn_data[key])
+		else:
+			set(key, spawn_data[key])
+
+
+func get_snapshot() -> Dictionary:
+	var snapshot: Dictionary
+	for prop in props_to_track_per_snapshot:
+		snapshot[prop] = get(prop)
+	return snapshot
+
+
+func set_snapshop(snapshot: Dictionary) -> void:
+	for prop in snapshot.keys():
+		set(prop, snapshot[prop])
+
+
+func interpolate_snapshot(
+	old_snapshot: Dictionary,
+	new_snapshot: Dictionary,
+	interpolation_delta: float
+) -> void:
+	for prop in new_snapshot.keys():
+		set(prop, lerp(old_snapshot, new_snapshot, interpolation_delta))
+
+
+func server_set_player(new_player: Player) -> void:
+	assert(multiplayer.is_server())
+	if new_player:
+		server_set_player_id(new_player.get_id())
+	else:
+		server_set_player_id(-1)
+
+
+func server_set_player_id(new_player_id: int) -> void:
+	assert(multiplayer.is_server())
+	_set_player_id.rpc_id(0, new_player_id)
+
+
+@rpc("call_local", "reliable", "authority")
+func _set_player_id(new_player_id: int, notify_own_blob: bool = true) -> void:
+	var old_player_id := _player_id
+	_player_id = new_player_id
+
+	if notify_own_blob:
+		var old_player := Players.get_player_by_id(old_player_id)
+		if old_player:
+			old_player._set_blob_id(-1, false)
+
+	player_id_changed.emit(old_player_id, new_player_id)
+
+
+func get_player_id() -> int:
+	return _player_id
+
+
+func get_player() -> Player:
+	return Players.get_player_by_id(_player_id)
+
+
+func has_player() -> bool:
+	return is_instance_valid(get_player())
+
+
+func is_my_blob() -> bool:
+	return not multiplayer.is_server() and get_player_id() == multiplayer.get_unique_id()

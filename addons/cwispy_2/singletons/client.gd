@@ -6,14 +6,14 @@ var get_join_data_callable: Callable
 
 func join_server(address: String="localhost", port: int=50301) -> void:
 	var peer := ENetMultiplayerPeer.new()
-	
+
 	var err := peer.create_client(address, port)
 	if err:
 		_handle_join_error(err)
 		return
-	
+
 	multiplayer.set_multiplayer_peer(peer)
-	
+
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
@@ -52,9 +52,17 @@ func receive_server_kick(reason: String) -> void:
 
 
 @rpc("authority", "reliable")
-func receive_initial_state(serialised_players: Array[PackedByteArray]) -> void:
+func receive_initial_state(initial_state: Dictionary) -> void:
+
+	var serialised_players: Array[PackedByteArray] = initial_state["players"]
 	for serialised_player in serialised_players:
 		var deserialised_player := Player.deserialise(serialised_player)
 		Players.add_old_player(deserialised_player)
-	
+
+	var blobs: Array[Dictionary] = initial_state["blobs"]
+	for blob in blobs:
+		var filepath: String = blob["filepath"]
+		var spawn_data: Dictionary = blob["spawn_data"]
+		Blobs._create_server_blob(filepath, spawn_data, false)
+
 	Server.client_finished_loading.rpc_id(1)
