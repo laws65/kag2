@@ -23,6 +23,7 @@ func _process(delta: float) -> void:
 	var second_latest_snapshot: Dictionary = snapshot_buffer[-2]
 	var latest_time: int = latest_snapshot["time"]
 	var second_latest_time: int = second_latest_snapshot["time"]
+	# TODO migrate render time to be timestamp of latest snapshot from server - 100ms + time since last timestamp
 	var render_time := second_latest_time + time_since_latest_snapshot
 	var interpolation_delta := (render_time - second_latest_time) / float(latest_time - second_latest_time)
 	interpolation_delta = min(interpolation_delta, 1)
@@ -58,13 +59,14 @@ func _transmit_blob_snapshots() -> void:
 	for blob in blobs:
 		var snapshot := blob.get_snapshot()
 		to_transmit[blob.get_id()] = snapshot
-	_receive_server_blob_snapshots.rpc_id(0, to_transmit)
+	var time := roundi(Time.get_unix_time_from_system()*1000.0)
+	_receive_server_blob_snapshots.rpc_id(0, to_transmit, time)
 
 
 @rpc("authority", "unreliable_ordered")
-func _receive_server_blob_snapshots(blob_snapshots: Dictionary) -> void:
+func _receive_server_blob_snapshots(blob_snapshots: Dictionary, time: int) -> void:
 	if not Client.connected_to_server: return
-	latest_snapshot_received = roundi(Time.get_unix_time_from_system()*1000.0)
+	latest_snapshot_received = time
 	time_since_latest_snapshot = 0
 	snapshot_buffer.push_back({
 		"time": latest_snapshot_received,
