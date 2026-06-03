@@ -47,7 +47,6 @@ func _rebuild_player_list() -> void:
 	var players := Players.get_players()
 	for player in players:
 		$CanvasLayer/Control/Label.text += player.get_prop("username") + "- " + str(player.get_id()) + "\n"
-		print(player.get_id())
 
 
 func _on_fps_timer_timeout() -> void:
