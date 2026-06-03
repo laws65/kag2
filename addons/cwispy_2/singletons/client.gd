@@ -1,6 +1,8 @@
 extends Node
 
 
+signal connection_established
+
 var get_join_data_callable: Callable
 
 var connected_to_server := false
@@ -38,6 +40,7 @@ func _handle_join_error(err: Error) -> void:
 
 
 func _on_connected_to_server() -> void:
+	connection_established.emit()
 	print("Successfully connected to server")
 
 

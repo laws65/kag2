@@ -1,6 +1,8 @@
 extends Node
 
 
+signal server_started
+
 var _unregistered_peers: Array[int]
 var _client_join_data: Dictionary[int, Dictionary]
 
@@ -20,6 +22,8 @@ func start_server(port: int=50301) -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
+	server_started.emit()
+
 
 func _handle_server_error(err: Error) -> void:
 	if err == Error.ERR_ALREADY_IN_USE:
@@ -31,22 +35,14 @@ func _handle_server_error(err: Error) -> void:
 func _on_peer_connected(player_id: int) -> void:
 	print("Peer ", player_id, " has connected")
 	_unregistered_peers.push_back(player_id)
-	_request_client_join_data(player_id)
-
-
-func _request_client_join_data(player_id: int) -> void:
-	print("Requesting peer ", player_id, "'s join data")
 	Client.send_join_data.rpc_id(player_id)
 
 
 @rpc("any_peer", "reliable")
 func receive_client_join_data(join_data: Dictionary) -> void:
 	var player_id := multiplayer.get_remote_sender_id()
-	print("Join data received from player ", player_id)
 	var username: String = join_data["username"]
 	var colour: Color = join_data["colour"]
-	print("Player's username is ", username)
-	print("Player's colour is ", colour)
 
 	if _client_allowed_to_join(player_id, join_data):
 		_client_join_data[player_id] = join_data

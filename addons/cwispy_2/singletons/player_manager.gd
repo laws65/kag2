@@ -21,7 +21,6 @@ func get_player_by_id(player_id: int) -> Player:
 
 @rpc("authority", "call_local", "reliable")
 func register_player(player_id: int, extra_data: Dictionary={}) -> void:
-	print("Trying to register player ", player_id)
 	var new_player := Player.new(player_id, extra_data)
 	_players_parent.add_child(new_player, true)
 	new_player_joined.emit(new_player)
@@ -33,7 +32,6 @@ func add_old_player(player: Player) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func deregister_player(player_id: int) -> void:
-	print("Trying to deregister player ", player_id)
 	var player := get_player_by_id(player_id)
 	if not player:
 		return

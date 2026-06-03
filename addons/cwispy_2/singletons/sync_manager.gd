@@ -3,14 +3,10 @@ extends Node
 
 var snapshot_buffer := []
 
-var latest_snapshot_received: float = 0.0
-var time_since_latest_snapshot : float = 0.0
-
 var interpolation_buffer_ms := 100.0
 
 
-func _process(delta: float) -> void:
-	time_since_latest_snapshot += delta * 1000.0
+func _process(_delta: float) -> void:
 	if multiplayer.multiplayer_peer == null:
 		return
 
@@ -20,10 +16,9 @@ func _process(delta: float) -> void:
 	if snapshot_buffer.size() < 2:
 		return
 
-
-	#var render_time := latest_snapshot_received - interpolation_buffer_ms + time_since_latest_snapshot
 	var render_time := NetworkedClock.client_clock - interpolation_buffer_ms
-	while snapshot_buffer.size() > 100 and snapshot_buffer[1]["time"] < render_time:
+
+	while snapshot_buffer.size() > 2 and snapshot_buffer[1]["time"] < render_time:
 		snapshot_buffer.pop_front()
 
 	var past_snapshot: Dictionary
@@ -37,8 +32,10 @@ func _process(delta: float) -> void:
 			break
 
 	if not past_snapshot:
-		print("breaking")
+		#print_rich("[b]can't render[/b]")
 		return
+	#else:
+		#print("rendering")
 
 	var interpolation_delta: float = (render_time - past_snapshot["time"]) / float(future_snapshot["time"] - past_snapshot["time"])
 
@@ -54,6 +51,7 @@ func _process(delta: float) -> void:
 			future_snapshot["snapshots"][blob_id],
 			interpolation_delta
 		)
+
 
 func _physics_process(_delta: float) -> void:
 	if multiplayer.multiplayer_peer == null:
@@ -77,13 +75,9 @@ func _transmit_blob_snapshots() -> void:
 @rpc("authority", "unreliable")
 func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time: float) -> void:
 	if not Client.connected_to_server: return
-	#if "--playerone" in OS.get_cmdline_args():
-	#		print(snapshot_time)
-
-	latest_snapshot_received = max(latest_snapshot_received, snapshot_time)
-	time_since_latest_snapshot = 0.0
 
 	var to_insert := {"time": snapshot_time, "snapshots": blob_snapshots}
+
 	if snapshot_buffer.is_empty():
 		snapshot_buffer.push_back(to_insert)
 		return

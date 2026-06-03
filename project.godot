@@ -13,6 +13,7 @@ config_version=5
 config/name="CS89"
 run/main_scene="uid://borapox5b1y7w"
 config/features=PackedStringArray("4.6", "Forward Plus")
+run/max_fps=240
 config/icon="res://icon.svg"
 
 [autoload]
@@ -28,6 +29,7 @@ NetworkedClock="*uid://cu0skdi6djlqk"
 
 [display]
 
+window/stretch/mode="viewport"
 window/vsync/vsync_mode=0
 
 [editor_plugins]
@@ -70,4 +72,5 @@ common/physics_jitter_fix=0.0
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"

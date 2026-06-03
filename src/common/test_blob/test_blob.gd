@@ -4,13 +4,13 @@ extends Blob
 
 func _ready() -> void:
 	if has_player():
-		$Label.text = str(get_player().get_id())
+		$Label.text = str(get_player().get_id()) + " " + str(get_player().get_prop("username"))
 
 
 func _physics_process(_delta: float) -> void:
 	if is_my_blob() and client_controlled:
 		var input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-		velocity = input * 750
+		velocity = input * 100
 		move_and_slide()
 	elif not multiplayer.is_server():
 		return

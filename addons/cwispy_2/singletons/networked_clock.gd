@@ -15,12 +15,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	client_clock += int(delta*1000) + delta_latency
+	client_clock += delta*1000.0 + delta_latency
 	delta_latency = 0.0
-	decimal_collector += (delta*1000) - int(delta*1000)
-	if decimal_collector >= 1.00:
-		client_clock += 1
-		decimal_collector -= 1.00
 
 
 func _on_connected_to_server() -> void:

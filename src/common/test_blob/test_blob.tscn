@@ -4,12 +4,9 @@
 [ext_resource type="Texture2D" uid="uid://k51rldx3p8yo" path="res://icon.svg" id="2_5gim2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_w8jvj"]
-size = Vector2(125, 125)
+size = Vector2(25, 25)
 
 [node name="TestBlob" type="CharacterBody2D" unique_id=62934992]
-physics_interpolation_mode = 1
-collision_layer = 0
-collision_mask = 0
 script = ExtResource("1_5gim2")
 client_controlled = true
 metadata/_custom_type_script = "uid://bk0d7x26sdivv"
@@ -18,12 +15,14 @@ metadata/_custom_type_script = "uid://bk0d7x26sdivv"
 shape = SubResource("RectangleShape2D_w8jvj")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=743564946]
+scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_5gim2")
 
 [node name="Label" type="Label" parent="." unique_id=429761544]
-offset_left = -48.0
-offset_top = -94.0
-offset_right = 51.0
-offset_bottom = -71.0
+offset_left = -49.0
+offset_top = -39.0
+offset_right = 50.0
+offset_bottom = -16.0
+horizontal_alignment = 1
 
 [connection signal="player_id_changed" from="." to="." method="_on_player_id_changed"]
