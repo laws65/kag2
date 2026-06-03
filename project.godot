@@ -24,6 +24,7 @@ Server="*uid://byisbyvlth6f5"
 Players="*uid://xkk8sm8l3lie"
 SyncManager="*uid://bhc3elhd6wkhe"
 Blobs="*uid://bedr0nkdq8rsr"
+NetworkedClock="*uid://cu0skdi6djlqk"
 
 [display]
 
@@ -64,7 +65,7 @@ move_down={
 
 [physics]
 
-common/physics_ticks_per_second=20
+common/physics_jitter_fix=0.0
 3d/physics_engine="Jolt Physics"
 
 [rendering]

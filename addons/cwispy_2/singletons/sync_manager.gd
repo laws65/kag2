@@ -3,11 +3,14 @@ extends Node
 
 var snapshot_buffer := []
 
-var latest_snapshot_received: int = 0
-var time_since_latest_snapshot : int = 0
+var latest_snapshot_received: float = 0.0
+var time_since_latest_snapshot : float = 0.0
+
+var interpolation_buffer_ms := 100.0
+
 
 func _process(delta: float) -> void:
-	time_since_latest_snapshot += roundi(delta * 1000)
+	time_since_latest_snapshot += delta * 1000.0
 	if multiplayer.multiplayer_peer == null:
 		return
 
@@ -16,31 +19,39 @@ func _process(delta: float) -> void:
 
 	if snapshot_buffer.size() < 2:
 		return
-	while snapshot_buffer.size() > 10:
+
+
+	#var render_time := latest_snapshot_received - interpolation_buffer_ms + time_since_latest_snapshot
+	var render_time := NetworkedClock.client_clock - interpolation_buffer_ms
+	while snapshot_buffer.size() > 100 and snapshot_buffer[1]["time"] < render_time:
 		snapshot_buffer.pop_front()
 
-	var latest_snapshot: Dictionary = snapshot_buffer[-1]
-	var second_latest_snapshot: Dictionary = snapshot_buffer[-2]
-	var latest_time: int = latest_snapshot["time"]
-	var second_latest_time: int = second_latest_snapshot["time"]
-	# TODO migrate render time to be timestamp of latest snapshot from server - 100ms + time since last timestamp
-	var render_time := second_latest_time + time_since_latest_snapshot
-	var interpolation_delta := (render_time - second_latest_time) / float(latest_time - second_latest_time)
-	interpolation_delta = min(interpolation_delta, 1)
-	print("%s - %s - %s - %s" % [second_latest_time, render_time, latest_time, interpolation_delta])
-	for blob_id in latest_snapshot["snapshots"].keys():
+	var past_snapshot: Dictionary
+	var future_snapshot: Dictionary
+
+	for i in snapshot_buffer.size() - 1:
+		if (snapshot_buffer[i]["time"] <= render_time
+		and snapshot_buffer[i+1]["time"] >= render_time):
+			past_snapshot = snapshot_buffer[i]
+			future_snapshot = snapshot_buffer[i+1]
+			break
+
+	if not past_snapshot:
+		print("breaking")
+		return
+
+	var interpolation_delta: float = (render_time - past_snapshot["time"]) / float(future_snapshot["time"] - past_snapshot["time"])
+
+	for blob_id in future_snapshot["snapshots"].keys():
 		if blob_id == Client.get_my_blob_id(): continue
 
 		var blob := Blobs.get_blob_by_id(blob_id)
 		if not blob: continue
-		if not second_latest_snapshot["snapshots"].has(blob_id): continue
-
-		var older_state: Dictionary = second_latest_snapshot["snapshots"][blob_id]
-		var newer_state: Dictionary = latest_snapshot["snapshots"][blob_id]
+		if not past_snapshot["snapshots"].has(blob_id): continue
 
 		blob.interpolate_snapshot(
-			older_state,
-			newer_state,
+			past_snapshot["snapshots"][blob_id],
+			future_snapshot["snapshots"][blob_id],
 			interpolation_delta
 		)
 
@@ -59,26 +70,30 @@ func _transmit_blob_snapshots() -> void:
 	for blob in blobs:
 		var snapshot := blob.get_snapshot()
 		to_transmit[blob.get_id()] = snapshot
-	var time := roundi(Time.get_unix_time_from_system()*1000.0)
+	var time: float = Time.get_ticks_usec() / 1000.0
 	_receive_server_blob_snapshots.rpc_id(0, to_transmit, time)
 
 
-@rpc("authority", "unreliable_ordered")
-func _receive_server_blob_snapshots(blob_snapshots: Dictionary, time: int) -> void:
+@rpc("authority", "unreliable")
+func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time: float) -> void:
 	if not Client.connected_to_server: return
-	latest_snapshot_received = time
-	time_since_latest_snapshot = 0
-	snapshot_buffer.push_back({
-		"time": latest_snapshot_received,
-		"snapshots": blob_snapshots
-	})
-	return
-	for blob_id: int in blob_snapshots.keys():
-		if blob_id == Client.get_my_blob_id(): continue
+	#if "--playerone" in OS.get_cmdline_args():
+	#		print(snapshot_time)
 
-		var blob := Blobs.get_blob_by_id(blob_id)
-		if blob:
-			blob.set_snapshop(blob_snapshots[blob_id])
+	latest_snapshot_received = max(latest_snapshot_received, snapshot_time)
+	time_since_latest_snapshot = 0.0
+
+	var to_insert := {"time": snapshot_time, "snapshots": blob_snapshots}
+	if snapshot_buffer.is_empty():
+		snapshot_buffer.push_back(to_insert)
+		return
+
+	for i in snapshot_buffer.size():
+		if snapshot_time < snapshot_buffer[i]["time"]:
+			snapshot_buffer.insert(i, to_insert)
+			return
+
+	snapshot_buffer.push_back(to_insert)
 
 
 func _transmit_client_snapshot() -> void:
@@ -90,7 +105,6 @@ func _transmit_client_snapshot() -> void:
 
 @rpc("any_peer", "unreliable_ordered")
 func _receive_client_blob_snapshot(snapshot: Dictionary) -> void:
-	print("client snapshot received")
 	var player_id := multiplayer.get_remote_sender_id()
 	var player := Players.get_player_by_id(player_id)
 	if is_instance_valid(player) and player.has_blob():

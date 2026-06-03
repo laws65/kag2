@@ -9,6 +9,7 @@ const autoloads := {
 	"Players": "player_manager.gd",
 	"SyncManager": "sync_manager.gd",
 	"Blobs": "blob_manager.gd",
+	"NetworkedClock": "networked_clock.gd",
 }
 
 

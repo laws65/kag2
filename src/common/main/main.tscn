@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://borapox5b1y7w"]
 
 [ext_resource type="Script" uid="uid://d3cst1yi8ycw5" path="res://src/common/main/main.gd" id="1_bnsfs"]
+[ext_resource type="Script" uid="uid://buu37wlc2gohm" path="res://src/common/main/spinner.gd" id="2_3xxxc"]
+[ext_resource type="Texture2D" uid="uid://k51rldx3p8yo" path="res://icon.svg" id="2_x4vwa"]
 
 [node name="Main" type="Node" unique_id=1648924525]
 script = ExtResource("1_bnsfs")
@@ -32,5 +34,10 @@ autostart = true
 [node name="Blobs" type="Node2D" parent="World" unique_id=877208775]
 
 [node name="Camera2D" type="Camera2D" parent="World" unique_id=210476563]
+
+[node name="Sprite2D" type="Sprite2D" parent="World" unique_id=1562586819]
+visible = false
+texture = ExtResource("2_x4vwa")
+script = ExtResource("2_3xxxc")
 
 [connection signal="timeout" from="Label3/FPSTimer" to="." method="_on_fps_timer_timeout"]
