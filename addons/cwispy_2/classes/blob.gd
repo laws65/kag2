@@ -4,7 +4,7 @@ class_name Blob
 
 signal player_id_changed(old_player_id: int, new_player_id: int)
 
-@export var props_to_track_per_snapshot: Array[String] = ["position"]
+@export var props_to_track_per_snapshot: Array[String] = ["position", "velocity"]
 @export var props_to_spawn_with: Array[String] = ["position", "_player_id"]
 
 @export var client_controlled: bool = false
@@ -100,3 +100,19 @@ func has_player() -> bool:
 
 func is_my_blob() -> bool:
 	return not multiplayer.is_server() and get_player_id() == Client.get_my_id()
+
+
+func _resolve_collision(collision: KinematicCollision2D) -> void:
+	var colliding_body_instance_id: int = collision.get_collider_id()
+	var colliding_body: Node2D = instance_from_id(colliding_body_instance_id)
+
+	if not colliding_body is Blob:
+		return
+
+	colliding_body = colliding_body as Blob
+	print("player %s colliding with blob %s" % [get_player_id(), colliding_body.get_player_id()])
+
+	if colliding_body.get_player_id() == Client.get_my_id():
+		var colliding_body_velocity: Vector2 = velocity
+		colliding_body.velocity += colliding_body_velocity
+		#colliding_body.move_and_collide(velocity * get_physics_process_delta_time())

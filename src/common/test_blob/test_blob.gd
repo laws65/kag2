@@ -9,11 +9,16 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if is_my_blob() and client_controlled:
 		var input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-		velocity = input * 100
-		move_and_collide(velocity * delta)
+		velocity = lerp(velocity, input * 100, delta*2.0)
+		var collision := move_and_collide(velocity * delta)
+		#if collision:
+		#	_resolve_collision(collision)
 	elif not multiplayer.is_server():
-		return
+
 		#print("%s %s" % [position, get_player_id()])
+		var collision := KinematicCollision2D.new()
+		if test_move(transform, velocity * delta, collision):
+			_resolve_collision(collision)
 
 
 func _on_player_id_changed(_old_player_id: int, new_player_id: int) -> void:
