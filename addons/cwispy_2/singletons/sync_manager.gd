@@ -5,10 +5,12 @@ var snapshot_buffer := []
 
 
 func _ready() -> void:
-	NetworkedClock.posttick.connect(_on_post_tick)
 	set_process(false)
+
+	NetworkedClock.posttick.connect(_on_post_tick)
 	Client.joined_server.connect(func(): set_process(true))
 
+var _last_snapshot_arrival_time_msecs := 0.0
 
 func _process(_delta: float) -> void:
 	if not multiplayer.is_server():
@@ -45,15 +47,7 @@ func _render_world_snapshot() -> void:
 
 	for blob_id in future_snapshot["snapshots"].keys():
 		if blob_id == Client.get_my_blob_id():
-			var blob := Blobs.get_blob_by_id(blob_id)
-			if not blob: continue
-			if not past_snapshot["snapshots"].has(blob_id): continue
-			blob.get_node("Ghost").show()
-			blob.get_node("Ghost").global_position = lerp(
-				past_snapshot["snapshots"][blob_id]["position"],
-				future_snapshot["snapshots"][blob_id]["position"],
-				interpolation_delta
-			)
+			_display_ghost_blob(blob_id, past_snapshot, future_snapshot, interpolation_delta)
 			continue
 
 		var blob := Blobs.get_blob_by_id(blob_id)
@@ -79,6 +73,12 @@ func _transmit_blob_snapshots() -> void:
 
 @rpc("authority", "unreliable")
 func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time_ticks: int) -> void:
+
+
+	var _time_msecs := Time.get_ticks_usec()/1000.0
+
+	print("Snapshot arrived with latency: ", _time_msecs - _last_snapshot_arrival_time_msecs, "ms")
+	_last_snapshot_arrival_time_msecs = _time_msecs
 	var to_insert := {"time": snapshot_time_ticks, "snapshots": blob_snapshots}
 
 	if snapshot_buffer.is_empty():
@@ -107,3 +107,19 @@ func _receive_client_blob_snapshot(snapshot: Dictionary) -> void:
 	if is_instance_valid(player) and player.has_blob():
 		var blob := player.get_blob()
 		blob.set_snapshop(snapshot)
+
+
+func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapshot: Dictionary, interpolation_delta: float) -> void:
+	var blob := Blobs.get_blob_by_id(blob_id)
+
+	if not blob:
+		return
+	if not past_snapshot["snapshots"].has(blob_id):
+		return
+
+	blob.get_node("Ghost").show()
+	blob.get_node("Ghost").global_position = lerp(
+		past_snapshot["snapshots"][blob_id]["position"],
+		future_snapshot["snapshots"][blob_id]["position"],
+		interpolation_delta
+	)

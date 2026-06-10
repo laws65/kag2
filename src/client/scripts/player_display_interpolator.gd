@@ -14,7 +14,7 @@ func _ready() -> void:
 		queue_free()
 		return
 
-	assert(blob, "Must let the player display interpolat")
+	assert(blob, "Must set the blob to interpolate")
 
 	blob.player_id_changed.connect(
 		func(_old_player_id, new_player_id):

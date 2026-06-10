@@ -4,7 +4,6 @@ extends EditorPlugin
 
 const autoloads := {
 	"Client": "client.gd",
-	"Multiplayer": "multiplayer.gd",
 	"Server": "server.gd",
 	"Players": "player_manager.gd",
 	"SyncManager": "sync_manager.gd",
@@ -21,13 +20,3 @@ func _enable_plugin() -> void:
 func _disable_plugin() -> void:
 	for autoload in autoloads.keys():
 		remove_autoload_singleton(autoload)
-
-
-func _enter_tree() -> void:
-	# Initialization of the plugin goes here.
-	pass
-
-
-func _exit_tree() -> void:
-	# Clean-up of the plugin goes here.
-	pass

@@ -9,6 +9,7 @@ var _client_join_data: Dictionary[int, Dictionary]
 
 var client_join_data_validator: Callable = func(join_data: Dictionary): return true
 
+
 func start_server(port: int=50301) -> void:
 	var peer := ENetMultiplayerPeer.new()
 
@@ -41,8 +42,6 @@ func _on_peer_connected(player_id: int) -> void:
 @rpc("any_peer", "reliable")
 func receive_client_join_data(join_data: Dictionary) -> void:
 	var player_id := multiplayer.get_remote_sender_id()
-	var username: String = join_data["username"]
-	var colour: Color = join_data["colour"]
 
 	if _client_allowed_to_join(player_id, join_data):
 		_client_join_data[player_id] = join_data
