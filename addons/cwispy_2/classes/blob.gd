@@ -9,7 +9,12 @@ signal player_id_changed(old_player_id: int, new_player_id: int)
 
 @export var client_controlled: bool = false
 
+@export var display_to_interpolate: Array[Node2D]
 var _player_id := -1
+
+
+func _init() -> void:
+	NetworkedClock.tick.connect(_on_tick)
 
 
 func set_id(new_id: int) -> void:
@@ -116,3 +121,7 @@ func _resolve_collision(collision: KinematicCollision2D) -> void:
 		var colliding_body_velocity: Vector2 = velocity
 		colliding_body.velocity += colliding_body_velocity
 		#colliding_body.move_and_collide(velocity * get_physics_process_delta_time())
+
+
+func _on_tick() -> void:
+	pass

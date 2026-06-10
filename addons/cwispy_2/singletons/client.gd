@@ -2,10 +2,10 @@ extends Node
 
 
 signal connection_established
+signal joined_server
 
 var get_join_data_callable: Callable
 
-var connected_to_server := false
 
 
 func _ready() -> void:
@@ -14,7 +14,7 @@ func _ready() -> void:
 
 func _on_Player_joined(player: Player) -> void:
 	if player.is_my_player():
-		connected_to_server = true
+		joined_server.emit()
 
 
 func join_server(address: String="localhost", port: int=50301) -> void:

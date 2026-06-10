@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b5313awcorpct" path="res://src/common/test_blob/test_blob.gd" id="1_5gim2"]
 [ext_resource type="Texture2D" uid="uid://k51rldx3p8yo" path="res://icon.svg" id="2_5gim2"]
+[ext_resource type="Script" uid="uid://cg1n23p2geaqu" path="res://src/client/scripts/player_display_interpolator.gd" id="3_034kl"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_w8jvj"]
 size = Vector2(25, 25)
@@ -18,11 +19,23 @@ shape = SubResource("RectangleShape2D_w8jvj")
 scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_5gim2")
 
+[node name="Ghost" type="Sprite2D" parent="." unique_id=908114931]
+visible = false
+modulate = Color(1, 0.12156863, 0.06666667, 0.3372549)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_5gim2")
+
 [node name="Label" type="Label" parent="." unique_id=429761544]
 offset_left = -49.0
-offset_top = -39.0
+offset_top = -41.0
 offset_right = 50.0
-offset_bottom = -16.0
+offset_bottom = -18.0
 horizontal_alignment = 1
+
+[node name="PlayerDisplayInterpolator" type="Node" parent="." unique_id=777456712 node_paths=PackedStringArray("blob", "nodes_to_interpolate")]
+script = ExtResource("3_034kl")
+blob = NodePath("..")
+nodes_to_interpolate = [NodePath("../Label"), NodePath("../Sprite2D")]
+metadata/_custom_type_script = "uid://cg1n23p2geaqu"
 
 [connection signal="player_id_changed" from="." to="." method="_on_player_id_changed"]

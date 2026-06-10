@@ -1,5 +1,8 @@
 extends Node
 
+signal pretick()
+signal tick()
+signal posttick()
 
 var latency: float = 0.0
 var client_clock: float = 0.0
@@ -8,15 +11,41 @@ var decimal_collector: float = 0.0
 
 var latency_array: Array[float]
 
+var time_ticks := 0
+var time_since_last_tick_seconds := 0.0
+var time_dilation_factor := 1.0
+var ticks_per_second := Engine.get_physics_ticks_per_second()
+
+var tick_duration_seconds: float:
+	get():
+		return 1.0/float(ticks_per_second)
+
+var interpolation_fraction: float:
+	get():
+		return time_since_last_tick_seconds / tick_duration_seconds
+
 
 func _ready() -> void:
-	#multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	set_process(false)
+
+	var enable_process := func(): set_process(true)
+
+	Client.joined_server.connect(enable_process)
+	Server.server_started.connect(enable_process)
 
 
 func _process(delta: float) -> void:
 	client_clock += delta*1000.0 + delta_latency
 	delta_latency = 0.0
+
+	time_since_last_tick_seconds += delta * time_dilation_factor
+
+	if time_since_last_tick_seconds > tick_duration_seconds:
+		time_ticks += 1
+		time_since_last_tick_seconds -= tick_duration_seconds
+		pretick.emit()
+		tick.emit()
+		posttick.emit()
 
 
 func _on_connected_to_server() -> void:

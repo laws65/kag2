@@ -67,6 +67,7 @@ move_down={
 
 [physics]
 
+common/physics_ticks_per_second=10
 common/physics_jitter_fix=0.0
 
 [rendering]
