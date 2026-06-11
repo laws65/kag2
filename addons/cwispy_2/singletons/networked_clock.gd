@@ -48,8 +48,13 @@ func _ready() -> void:
 	ticks_per_second = INITIAL_TICKS_PER_SECOND
 	var enable_process := func(): set_process(true)
 
-	Client.joined_server.connect(enable_process)
+	Client.joined_server.connect(
+		func():
+			enable_process.call()
+			_calculate_initial_latency()
+	)
 	Server.server_started.connect(enable_process)
+
 	posttick.connect(_on_post_tick)
 
 
@@ -66,10 +71,6 @@ func _process(delta: float) -> void:
 		pretick.emit()
 		tick.emit()
 		posttick.emit()
-
-
-func _on_connected_to_server() -> void:
-	_fetch_server_time.rpc_id(1, engine_time_msecs)
 
 
 func _on_post_tick() -> void:
@@ -125,34 +126,42 @@ func _adjust_latency() -> void:
 	latency_array.clear()
 
 
-@rpc("reliable", "any_peer")
-func _fetch_server_time(client_time_msecs: float) -> void:
-	var player_id := multiplayer.get_remote_sender_id()
-	_return_server_time.rpc_id(player_id, engine_time_msecs, client_time_msecs)
-
-
-@rpc("reliable", "authority")
-func _return_server_time(server_time_msecs: float, old_client_time_msecs: float) -> void:
-	latency_msecs = (engine_time_msecs - old_client_time_msecs) / 2.0
-
-
 func _adjust_time_dilation_factor() -> void:
-	const max_tick_disparity_before_correcting := 3
-	const min_tick_disparity_to_stop_correcting := 2
+	const max_tick_disparity_before_correcting := 1
 
 	const high_time_dilation_factor := 1.2
 	const low_time_dilation_factor := 0.8
 
-	var desired_time_ticks := latest_server_time_ticks - msecs_to_ticks(latency_msecs + time_since_last_tick_msecs)
+	var desired_time_ticks := (
+		latest_server_time_ticks
+		- msecs_to_ticks(latency_msecs)
+		- msecs_to_ticks(time_since_last_tick_msecs)
+	)
+
 	var tick_diff := abs(time_ticks - desired_time_ticks)
 
 	if tick_diff <= max_tick_disparity_before_correcting:
-		if tick_diff <= min_tick_disparity_to_stop_correcting:
-			time_dilation_factor = 1.0
+		time_dilation_factor = 1.0
 	elif desired_time_ticks > time_ticks:
 		time_dilation_factor = high_time_dilation_factor
 	else:
 		time_dilation_factor = low_time_dilation_factor
+
+
+func _calculate_initial_latency() -> void:
+	_return_initial_latency.rpc_id(1, engine_time_msecs)
+
+
+@rpc("reliable", "any_peer")
+func _return_initial_latency(client_engine_time_msecs: float) -> void:
+	var sender_id := multiplayer.get_remote_sender_id()
+	_receive_initial_latency.rpc_id(sender_id, client_engine_time_msecs)
+
+
+@rpc("reliable", "authority")
+func _receive_initial_latency(old_engine_time_msecs: float) -> void:
+	latency_msecs = (engine_time_msecs - old_engine_time_msecs) * 0.5
+
 
 
 func msecs_to_ticks(time_msecs: float) -> int:
