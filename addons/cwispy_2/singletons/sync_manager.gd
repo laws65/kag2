@@ -2,7 +2,7 @@ extends Node
 
 
 var snapshot_buffer := []
-
+var _interpolation_buffer_min_size_ticks := 2
 
 func _ready() -> void:
 	set_process(false)
@@ -10,7 +10,6 @@ func _ready() -> void:
 	NetworkedClock.posttick.connect(_on_post_tick)
 	Client.joined_server.connect(func(): set_process(true))
 
-var _last_snapshot_arrival_time_msecs := 0.0
 
 func _process(_delta: float) -> void:
 	if not multiplayer.is_server():
@@ -28,7 +27,7 @@ func _render_world_snapshot() -> void:
 	if snapshot_buffer.size() < 2:
 		return
 
-	var render_time_ticks: int = snapshot_buffer[-1]["time"]
+	var render_time_ticks: int = NetworkedClock.time_ticks - _interpolation_buffer_min_size_ticks
 
 	while snapshot_buffer.size() > 2 and snapshot_buffer[1]["time"] < render_time_ticks:
 		snapshot_buffer.pop_front()
@@ -43,8 +42,10 @@ func _render_world_snapshot() -> void:
 			future_snapshot = snapshot_buffer[i+1]
 			break
 
-	var interpolation_delta: float = 1#dNetworkedClock.interpolation_fraction
+	var interpolation_delta: float = NetworkedClock.interpolation_fraction
 
+	if not past_snapshot or not future_snapshot:
+		return
 	for blob_id in future_snapshot["snapshots"].keys():
 		if blob_id == Client.get_my_blob_id():
 			_display_ghost_blob(blob_id, past_snapshot, future_snapshot, interpolation_delta)
@@ -73,17 +74,7 @@ func _transmit_blob_snapshots() -> void:
 
 @rpc("authority", "unreliable")
 func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time_ticks: int) -> void:
-
-
-	var _time_msecs := Time.get_ticks_usec()/1000.0
-
-	print("Snapshot arrived with latency: ", _time_msecs - _last_snapshot_arrival_time_msecs, "ms")
-	_last_snapshot_arrival_time_msecs = _time_msecs
 	var to_insert := {"time": snapshot_time_ticks, "snapshots": blob_snapshots}
-
-	if snapshot_buffer.is_empty():
-		snapshot_buffer.push_back(to_insert)
-		return
 
 	for i in snapshot_buffer.size():
 		if snapshot_time_ticks < snapshot_buffer[i]["time"]:
