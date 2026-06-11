@@ -46,14 +46,13 @@ func _ready() -> void:
 	set_process(false)
 
 	ticks_per_second = INITIAL_TICKS_PER_SECOND
-	var enable_process := func(): set_process(true)
 
 	Client.joined_server.connect(
 		func():
-			enable_process.call()
+			set_process(true)
 			_calculate_initial_latency()
 	)
-	Server.server_started.connect(enable_process)
+	Server.server_started.connect(set_process.bind(true))
 
 	posttick.connect(_on_post_tick)
 
@@ -115,7 +114,7 @@ func _adjust_latency() -> void:
 	var pruned_latency_array: Array[float]
 
 	for latency_value in latency_array:
-		if latency_value < latency_median*2.0 or latency_value < 20.0:
+		if latency_value < latency_median * 2.0 or latency_value < 20.0:
 			pruned_latency_array.push_back(latency_value)
 
 	var total_latency := 0.0
@@ -161,7 +160,6 @@ func _return_initial_latency(client_engine_time_msecs: float) -> void:
 @rpc("reliable", "authority")
 func _receive_initial_latency(old_engine_time_msecs: float) -> void:
 	latency_msecs = (engine_time_msecs - old_engine_time_msecs) * 0.5
-
 
 
 func msecs_to_ticks(time_msecs: float) -> int:
