@@ -4,6 +4,8 @@ extends Node
 signal connection_established
 signal joined_server
 
+var has_joined_server: bool = false
+
 var get_join_data_callable: Callable
 
 
@@ -14,6 +16,7 @@ func _ready() -> void:
 
 func _on_Player_joined(player: Player) -> void:
 	if player.is_my_player():
+		has_joined_server = true
 		joined_server.emit()
 
 
@@ -76,7 +79,7 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 	for blob in blobs:
 		var filepath: String = blob["filepath"]
 		var spawn_data: Dictionary = blob["spawn_data"]
-		Blobs._create_server_blob(filepath, spawn_data, false)
+		Blobs._create_blob(filepath, spawn_data)
 
 	Server.client_finished_loading.rpc_id(1)
 

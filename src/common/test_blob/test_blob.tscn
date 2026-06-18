@@ -34,6 +34,7 @@ horizontal_alignment = 1
 
 [node name="PlayerDisplayInterpolator" type="Node" parent="." unique_id=777456712 node_paths=PackedStringArray("blob", "nodes_to_interpolate")]
 script = ExtResource("3_034kl")
+active = false
 blob = NodePath("..")
 nodes_to_interpolate = [NodePath("../Label"), NodePath("../Sprite2D")]
 metadata/_custom_type_script = "uid://cg1n23p2geaqu"

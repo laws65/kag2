@@ -51,7 +51,7 @@ func server_set_blob(new_blob: Blob) -> void:
 
 func server_set_blob_id(new_blob_id: int) -> void:
 	assert(multiplayer.is_server())
-	_set_blob_id.rpc(new_blob_id)
+	Network.rpc_id_safe(0, _set_blob_id, new_blob_id)
 
 
 @rpc("call_local", "reliable", "authority")

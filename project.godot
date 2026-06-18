@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="CS89"
+config/name="kag 2"
 run/main_scene="uid://borapox5b1y7w"
 config/features=PackedStringArray("4.6", "Forward Plus")
 run/max_fps=240
@@ -25,6 +25,7 @@ Players="*uid://xkk8sm8l3lie"
 SyncManager="*uid://bhc3elhd6wkhe"
 Blobs="*uid://bedr0nkdq8rsr"
 NetworkedClock="*uid://cu0skdi6djlqk"
+Network="*uid://cs31w1cq4hxk4"
 
 [display]
 
@@ -38,7 +39,8 @@ enabled=PackedStringArray("res://addons/GDTask/plugin.cfg", "res://addons/cwispy
 [file_customization]
 
 folder_colors={
-"res://addons/GDTask/": "gray"
+"res://addons/GDTask/": "gray",
+"res://addons/godot-rapier2d/": "gray"
 }
 
 [input]
@@ -66,8 +68,9 @@ move_down={
 
 [physics]
 
-common/physics_ticks_per_second=30
+common/physics_ticks_per_second=10
 common/physics_jitter_fix=0.0
+2d/physics_engine="Rapier2D"
 
 [rendering]
 

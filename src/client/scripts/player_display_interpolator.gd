@@ -2,6 +2,7 @@ extends Node
 class_name PlayerDisplayInterpolator
 
 
+@export var active: bool = true
 @export var blob: Blob
 @export var nodes_to_interpolate: Array[Node] = []
 
@@ -12,14 +13,12 @@ var _new_position := Vector2.ZERO
 func _ready() -> void:
 	if multiplayer.is_server():
 		queue_free()
+		set_process(false)
 		return
 
-	assert(blob, "Must set the blob to interpolate")
+	set_process(active)
 
-	blob.player_id_changed.connect(
-		func(_old_player_id, new_player_id):
-			set_process(new_player_id == Client.get_my_id())
-	)
+	assert(is_instance_valid(blob), "Must set the blob to interpolate")
 
 	NetworkedClock.posttick.connect(
 		func():

@@ -2,18 +2,42 @@ extends Node
 
 
 var snapshot_buffer := []
-var _interpolation_buffer_min_size_ticks := 2
+var _interpolation_buffer_min_size_ticks := 0
+
 
 func _ready() -> void:
 	set_process(false)
 
+	NetworkedClock.pretick.connect(_on_pre_tick)
 	NetworkedClock.posttick.connect(_on_post_tick)
+
 	Client.joined_server.connect(func(): set_process(true))
 
 
 func _process(_delta: float) -> void:
 	if not multiplayer.is_server():
 		_render_world_snapshot()
+
+
+func _render_world_snapshot_tick() -> void:
+	if snapshot_buffer.size() < 1 + _interpolation_buffer_min_size_ticks:
+		return
+	var render_snapshot: Dictionary = snapshot_buffer[-1 - _interpolation_buffer_min_size_ticks]["snapshots"]
+
+	for blob_id in render_snapshot.keys():
+		var blob := Blobs.get_blob_by_id(blob_id)
+		if not is_instance_valid(blob):
+			continue
+		if blob.is_my_blob():
+			_display_ghost_blob(blob_id, render_snapshot[blob_id], render_snapshot[blob_id], 1)
+			continue
+		blob.set_snapshop(render_snapshot[blob_id])
+
+
+func _on_pre_tick() -> void:
+	return
+	if not multiplayer.is_server():
+		_render_world_snapshot_tick()
 
 
 func _on_post_tick() -> void:

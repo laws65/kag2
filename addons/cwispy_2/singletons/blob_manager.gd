@@ -29,7 +29,7 @@ func server_create_blob(blob_filepath: String, spawn_data: Dictionary = {}) -> B
 	new_blob.set_id(new_blob.get_instance_id())
 	spawn_data["id"] = new_blob_id
 
-	_create_server_blob.rpc_id(0, blob_filepath, spawn_data)
+	Network.rpc_id_safe(0, _create_server_blob, blob_filepath, spawn_data)
 
 	return new_blob
 

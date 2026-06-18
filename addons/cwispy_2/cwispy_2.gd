@@ -9,6 +9,7 @@ const autoloads := {
 	"SyncManager": "sync_manager.gd",
 	"Blobs": "blob_manager.gd",
 	"NetworkedClock": "networked_clock.gd",
+	"Network": "network.gd",
 }
 
 

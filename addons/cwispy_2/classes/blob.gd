@@ -72,7 +72,7 @@ func server_set_player(new_player: Player) -> void:
 
 func server_set_player_id(new_player_id: int) -> void:
 	assert(multiplayer.is_server())
-	_set_player_id.rpc(new_player_id)
+	Network.rpc_id_safe(0, _set_player_id, new_player_id)
 
 
 @rpc("call_local", "reliable", "authority")

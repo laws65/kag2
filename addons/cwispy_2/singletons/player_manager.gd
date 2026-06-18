@@ -21,6 +21,12 @@ func get_player_by_id(player_id: int) -> Player:
 
 @rpc("authority", "call_local", "reliable")
 func register_player(player_id: int, extra_data: Dictionary={}) -> void:
+	if (not multiplayer.is_server()
+	and not Client.has_joined_server
+	and player_id != multiplayer.get_unique_id()
+	):
+		return
+
 	var new_player := Player.new(player_id, extra_data)
 	_players_parent.add_child(new_player, true)
 	new_player_joined.emit(new_player)

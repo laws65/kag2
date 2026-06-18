@@ -1,5 +1,6 @@
 extends Node
 
+
 signal pretick()
 signal tick()
 signal posttick()
@@ -17,14 +18,15 @@ var time_ticks := 0
 var time_since_last_tick_msecs := 0.0
 var time_dilation_factor := 1.0
 
+var latest_server_time_ticks: int = 0 # client only
+var latest_server_engine_time_msecs: float = 0.0 # client only
+
+
 var ticks_per_second: int:
 	set(value):
 		Engine.set_physics_ticks_per_second(value)
 	get():
 		return Engine.get_physics_ticks_per_second()
-
-var latest_server_time_ticks: int = 0 # client only
-var latest_server_engine_time_msecs: float = 0.0 # client only
 
 
 var engine_time_msecs: float:
@@ -56,6 +58,9 @@ func _ready() -> void:
 
 	posttick.connect(_on_post_tick)
 
+	var space := get_viewport().world_2d.space
+	PhysicsServer2D.space_set_active(space, false)
+
 
 func _process(delta: float) -> void:
 	time_since_last_tick_msecs += delta * 1000.0 * time_dilation_factor
@@ -68,7 +73,13 @@ func _process(delta: float) -> void:
 		time_since_last_tick_msecs -= tick_duration_msecs
 		#print(time_dilation_factor)
 		pretick.emit()
+
 		tick.emit()
+
+		var space := get_viewport().world_2d.space
+		RapierPhysicsServer2D.space_step(space, time_since_last_tick_msecs / 1000.0)
+		RapierPhysicsServer2D.space_flush_queries(space)
+
 		posttick.emit()
 
 
