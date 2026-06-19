@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://b5313awcorpct" path="res://src/common/test_blob/test_blob.gd" id="1_5gim2"]
 [ext_resource type="Texture2D" uid="uid://k51rldx3p8yo" path="res://icon.svg" id="2_5gim2"]
 [ext_resource type="Script" uid="uid://cg1n23p2geaqu" path="res://src/client/scripts/player_display_interpolator.gd" id="3_034kl"]
+[ext_resource type="PackedScene" uid="uid://b0t1ywqrl8l1t" path="res://src/client/debug_blob.tscn" id="4_b6fct"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_w8jvj"]
 size = Vector2(25, 25)
@@ -38,5 +39,12 @@ active = false
 blob = NodePath("..")
 nodes_to_interpolate = [NodePath("../Label"), NodePath("../Sprite2D")]
 metadata/_custom_type_script = "uid://cg1n23p2geaqu"
+
+[node name="DebugBlob" parent="." unique_id=1121405018 node_paths=PackedStringArray("blob") instance=ExtResource("4_b6fct")]
+offset_left = -64.0
+offset_top = -13.0
+offset_right = 67.0
+offset_bottom = 16.0
+blob = NodePath("..")
 
 [connection signal="player_id_changed" from="." to="." method="_on_player_id_changed"]

@@ -29,7 +29,7 @@ Network="*uid://cs31w1cq4hxk4"
 
 [display]
 
-window/stretch/mode="viewport"
+window/stretch/mode="canvas_items"
 window/vsync/vsync_mode=0
 
 [editor_plugins]

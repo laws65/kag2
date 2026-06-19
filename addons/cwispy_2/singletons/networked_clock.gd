@@ -76,7 +76,7 @@ func _process(delta: float) -> void:
 		time_ticks += 1
 		time_since_last_tick_msecs -= tick_duration_msecs
 
-		if not Client.has_joined_server:
+		if not Client.has_joined_server and not multiplayer.is_server():
 			return
 
 		pretick.emit()

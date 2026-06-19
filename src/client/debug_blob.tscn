@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://b0t1ywqrl8l1t"]
+
+[ext_resource type="Script" uid="uid://c5qqjyq3j8cmd" path="res://src/client/scripts/debug_blob.gd" id="1_rt5sc"]
+
+[node name="DebugBlob" type="Control" unique_id=1121405018]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 131.0
+offset_bottom = 29.0
+script = ExtResource("1_rt5sc")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=763725341]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.4506483, 0.4506483, 0.45064825, 1)
+
+[node name="Label" type="Label" parent="ColorRect" unique_id=626499882]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 8
+text = "ID: 1
+Player ID: 1"

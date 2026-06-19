@@ -14,28 +14,7 @@ func _ready() -> void:
 	Client.joined_server.connect(func(): set_process(true))
 
 
-func _process(_delta: float) -> void:
-	if not multiplayer.is_server():
-		_render_world_snapshot()
-
-
-func _render_world_snapshot_tick() -> void:
-	if snapshot_buffer.size() < 1 + _interpolation_buffer_min_size_ticks:
-		return
-	var render_snapshot: Dictionary = snapshot_buffer[-1 - _interpolation_buffer_min_size_ticks]["snapshots"]
-
-	for blob_id in render_snapshot.keys():
-		var blob := Blobs.get_blob_by_id(blob_id)
-		if not is_instance_valid(blob):
-			continue
-		if blob.is_my_blob():
-			_display_ghost_blob(blob_id, render_snapshot[blob_id], render_snapshot[blob_id], 1)
-			continue
-		blob.set_snapshop(render_snapshot[blob_id])
-
-
 func _on_pre_tick() -> void:
-	return
 	if not multiplayer.is_server():
 		_render_world_snapshot_tick()
 
@@ -47,43 +26,20 @@ func _on_post_tick() -> void:
 		_transmit_client_snapshot()
 
 
-func _render_world_snapshot() -> void:
-	if snapshot_buffer.size() < 2:
+func _render_world_snapshot_tick() -> void:
+	if snapshot_buffer.size() < 1 + _interpolation_buffer_min_size_ticks:
 		return
 
-	var render_time_ticks: int = NetworkedClock.time_ticks - _interpolation_buffer_min_size_ticks
+	var render_snapshot: Dictionary = snapshot_buffer[-1 - _interpolation_buffer_min_size_ticks]["snapshots"]
 
-	while snapshot_buffer.size() > 2 and snapshot_buffer[1]["time"] < render_time_ticks:
-		snapshot_buffer.pop_front()
-
-	var past_snapshot: Dictionary
-	var future_snapshot: Dictionary
-
-	for i in snapshot_buffer.size() - 1:
-		if (snapshot_buffer[i]["time"] <= render_time_ticks
-		and snapshot_buffer[i+1]["time"] >= render_time_ticks):
-			past_snapshot = snapshot_buffer[i]
-			future_snapshot = snapshot_buffer[i+1]
-			break
-
-	var interpolation_delta: float = NetworkedClock.interpolation_fraction
-
-	if not past_snapshot or not future_snapshot:
-		return
-	for blob_id in future_snapshot["snapshots"].keys():
-		if blob_id == Client.get_my_blob_id():
-			_display_ghost_blob(blob_id, past_snapshot, future_snapshot, interpolation_delta)
-			continue
-
+	for blob_id in render_snapshot.keys():
 		var blob := Blobs.get_blob_by_id(blob_id)
-		if not blob: continue
-		if not past_snapshot["snapshots"].has(blob_id): continue
-
-		blob.interpolate_snapshot(
-			past_snapshot["snapshots"][blob_id],
-			future_snapshot["snapshots"][blob_id],
-			interpolation_delta
-		)
+		if not is_instance_valid(blob):
+			continue
+		if blob.is_my_blob():
+			_display_ghost_blob(blob_id, render_snapshot[blob_id], render_snapshot[blob_id], 1)
+			continue
+		blob.set_snapshop(render_snapshot[blob_id])
 
 
 func _transmit_blob_snapshots() -> void:
@@ -128,6 +84,8 @@ func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapsho
 	var blob := Blobs.get_blob_by_id(blob_id)
 
 	if not blob:
+		return
+	if not past_snapshot.has("snapshots"):
 		return
 	if not past_snapshot["snapshots"].has(blob_id):
 		return
