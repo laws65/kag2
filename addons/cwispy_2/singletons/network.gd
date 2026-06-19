@@ -1,5 +1,21 @@
 extends Node
 
+var _rpc_queue: Array[Dictionary] # [{sender_id=x, node_path=x, method_name=x, args=x}]
+
+
+func _ready() -> void:
+	Client.joined_server.connect(
+		func():
+			for rpc_data in _rpc_queue:
+				_generic_receive_rpc_id_safe(
+					rpc_data.sender_id,
+					rpc_data.node_path,
+					rpc_data.method_name,
+					rpc_data.args
+				)
+			_rpc_queue.clear()
+	)
+
 
 func rpc_id_safe(peer_id: int, method: Callable, ...args: Array) -> void:
 	var node: Node = method.get_object()
@@ -50,8 +66,7 @@ func _receive_rpc_id_safe_unreliable_ordered(node_path: NodePath, method_name: S
 
 func _generic_receive_rpc_id_safe(sender_id: int, node_path: NodePath, method_name: StringName, args: Array) -> void:
 	if not multiplayer.is_server() and not Client.has_joined_server:
-		# TODO store rejected rpcs in a list and then execute them once set up
-		#print("Received call %s on %s but I am not set up yet, REJECTING" % [method_name, node_path])
+		_rpc_queue.push_back({"sender_id": sender_id, "node_path": node_path, "method_name": method_name, "args": args})
 		return
 
 	var node := get_tree().root.get_node_or_null(node_path)

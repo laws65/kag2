@@ -49,12 +49,16 @@ func _ready() -> void:
 
 	ticks_per_second = INITIAL_TICKS_PER_SECOND
 
-	Client.joined_server.connect(
+	Client.connection_established.connect(
 		func():
 			set_process(true)
-			_calculate_initial_latency()
+			_calculate_initial_time_and_latency()
 	)
-	Server.server_started.connect(set_process.bind(true))
+
+	Server.server_started.connect(
+		func():
+			set_process(true)
+	)
 
 	posttick.connect(_on_post_tick)
 
@@ -71,9 +75,11 @@ func _process(delta: float) -> void:
 	if time_since_last_tick_msecs > tick_duration_msecs:
 		time_ticks += 1
 		time_since_last_tick_msecs -= tick_duration_msecs
-		#print(time_dilation_factor)
-		pretick.emit()
 
+		if not Client.has_joined_server:
+			return
+
+		pretick.emit()
 		tick.emit()
 
 		var space := get_viewport().world_2d.space
@@ -158,19 +164,28 @@ func _adjust_time_dilation_factor() -> void:
 		time_dilation_factor = low_time_dilation_factor
 
 
-func _calculate_initial_latency() -> void:
-	_return_initial_latency.rpc_id(1, engine_time_msecs)
+func _calculate_initial_time_and_latency() -> void:
+	_return_initial_time_and_latency.rpc_id(1, engine_time_msecs)
 
 
 @rpc("reliable", "any_peer")
-func _return_initial_latency(client_engine_time_msecs: float) -> void:
+func _return_initial_time_and_latency(client_engine_time_msecs: float) -> void:
 	var sender_id := multiplayer.get_remote_sender_id()
-	_receive_initial_latency.rpc_id(sender_id, client_engine_time_msecs)
+	_receive_initial_time_and_latency.rpc_id(
+		sender_id, client_engine_time_msecs, time_ticks, engine_time_msecs
+	)
 
 
 @rpc("reliable", "authority")
-func _receive_initial_latency(old_engine_time_msecs: float) -> void:
+func _receive_initial_time_and_latency(
+	old_engine_time_msecs: float, server_time_ticks: int, server_engine_time_msecs: float
+) -> void:
 	latency_msecs = (engine_time_msecs - old_engine_time_msecs) * 0.5
+
+	time_ticks = server_time_ticks
+
+	latest_server_time_ticks = server_time_ticks
+	latest_server_engine_time_msecs = server_engine_time_msecs
 
 
 func msecs_to_ticks(time_msecs: float) -> int:
