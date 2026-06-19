@@ -50,11 +50,13 @@ func _receive_rpc_id_safe_unreliable_ordered(node_path: NodePath, method_name: S
 
 func _generic_receive_rpc_id_safe(sender_id: int, node_path: NodePath, method_name: StringName, args: Array) -> void:
 	if not multiplayer.is_server() and not Client.has_joined_server:
-		print("Received call %s on %s but I am not set up yet, REJECTING" % [method_name, node_path])
+		# TODO store rejected rpcs in a list and then execute them once set up
+		#print("Received call %s on %s but I am not set up yet, REJECTING" % [method_name, node_path])
 		return
 
 	var node := get_tree().root.get_node_or_null(node_path)
 	if not is_instance_valid(node):
+		# TODO request node if it doesn't exist for me
 		print("Cannot call %s on %s because it doesn't exist in this scene tree" % [method_name, node_path])
 		return
 
