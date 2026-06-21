@@ -12,7 +12,7 @@ config_version=5
 
 config/name="kag 2"
 run/main_scene="uid://borapox5b1y7w"
-config/features=PackedStringArray("4.6", "Forward Plus")
+config/features=PackedStringArray("4.7", "Forward Plus")
 run/max_fps=240
 config/icon="res://icon.svg"
 
@@ -29,7 +29,8 @@ Network="*uid://cs31w1cq4hxk4"
 
 [display]
 
-window/stretch/mode="canvas_items"
+window/stretch/mode="viewport"
+window/stretch/aspect="expand"
 window/vsync/vsync_mode=0
 
 [editor_plugins]
