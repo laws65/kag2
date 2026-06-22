@@ -1,7 +1,7 @@
 extends Node
 
 
-var _rpc_queue: Array[Dictionary] # [{sender_id=x, node_path=x, method_name=x, args=x}]
+var _rpc_queue: Array[RPCInfo]
 var debug: bool = true
 
 
@@ -14,7 +14,7 @@ var accept_rpcs_after_time_ticks: int = -1
 var buffer_cutoff_time_ticks := -1
 
 
-func rpc_id_safe(peer_id: int, method: Callable, ...args: Array) -> void:
+func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
 	var node: Node = method.get_object()
 	assert(
 		is_instance_valid(node),
@@ -33,35 +33,44 @@ func rpc_id_safe(peer_id: int, method: Callable, ...args: Array) -> void:
 
 	var transmit_time_ticks := NetworkedClock.time_ticks
 
+	var rpc_info := RPCInfo.new(multiplayer.get_unique_id(), node_path, method_name, transmit_time_ticks, args)
+	var serialised_rpc_info := RPCInfo.serialise(rpc_info)
+
 	if method_rpc_config.get("call_local"):
-		_generic_receive_rpc_id_safe(multiplayer.get_unique_id(), node_path, method_name, transmit_time_ticks, args)
+		_generic_receive_rpc_id_safe(rpc_info)
 
 
 	match method_rpc_config.transfer_mode:
 		MultiplayerPeer.TRANSFER_MODE_RELIABLE:
-			_receive_rpc_id_safe_reliable.rpc_id(peer_id, node_path, method_name, transmit_time_ticks, args)
+			_receive_rpc_id_safe_reliable.rpc_id(target_id, serialised_rpc_info)
 		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE:
-			_receive_rpc_id_safe_unreliable.rpc_id(peer_id, node_path, method_name, transmit_time_ticks, args)
+			_receive_rpc_id_safe_unreliable.rpc_id(target_id, serialised_rpc_info)
 		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED:
-			_receive_rpc_id_safe_unreliable_ordered.rpc_id(peer_id, node_path, method_name, transmit_time_ticks, args)
+			_receive_rpc_id_safe_unreliable_ordered.rpc_id(target_id, serialised_rpc_info)
 
 
 @rpc("reliable", "any_peer")
-func _receive_rpc_id_safe_reliable(node_path: NodePath, method_name: StringName, transmit_time_ticks: int, args: Array) -> void:
+func _receive_rpc_id_safe_reliable(serialised_rpc_info: PackedByteArray) -> void:
+	var rpc_info: RPCInfo = RPCInfo.deserialised(serialised_rpc_info)
 	var sender_id := multiplayer.get_remote_sender_id()
-	_generic_receive_rpc_id_safe(sender_id, node_path, method_name, transmit_time_ticks, args)
+	rpc_info.sender_id = sender_id
+	_generic_receive_rpc_id_safe(rpc_info)
 
 
 @rpc("unreliable", "any_peer")
-func _receive_rpc_id_safe_unreliable(node_path: NodePath, method_name: StringName, transmit_time_ticks: int, args: Array) -> void:
+func _receive_rpc_id_safe_unreliable(serialised_rpc_info: PackedByteArray) -> void:
+	var rpc_info: RPCInfo = RPCInfo.deserialised(serialised_rpc_info)
 	var sender_id := multiplayer.get_remote_sender_id()
-	_generic_receive_rpc_id_safe(sender_id, node_path, method_name, transmit_time_ticks, args)
+	rpc_info.sender_id = sender_id
+	_generic_receive_rpc_id_safe(rpc_info)
 
 
 @rpc("unreliable_ordered", "any_peer")
-func _receive_rpc_id_safe_unreliable_ordered(node_path: NodePath, method_name: StringName, transmit_time_ticks: int, args: Array) -> void:
+func _receive_rpc_id_safe_unreliable_ordered(serialised_rpc_info: PackedByteArray) -> void:
+	var rpc_info: RPCInfo = RPCInfo.deserialised(serialised_rpc_info)
 	var sender_id := multiplayer.get_remote_sender_id()
-	_generic_receive_rpc_id_safe(sender_id, node_path, method_name, transmit_time_ticks, args)
+	rpc_info.sender_id = sender_id
+	_generic_receive_rpc_id_safe(rpc_info)
 
 
 func _should_buffer_incoming_rpc(transmit_time_ticks: int) -> bool:
@@ -72,37 +81,30 @@ func _should_buffer_incoming_rpc(transmit_time_ticks: int) -> bool:
 	)
 
 
-func _generic_receive_rpc_id_safe(sender_id: int, node_path: NodePath, method_name: StringName, transmit_time_ticks: int, args: Array) -> void:
+func _generic_receive_rpc_id_safe(rpc_info: RPCInfo) -> void:
 	if not multiplayer.is_server():
-		print("%s request call %s on %s" % [multiplayer.get_unique_id(), method_name, node_path])
-	if _should_buffer_incoming_rpc(transmit_time_ticks):
-		print("%s adding %s to queue" % [multiplayer.get_unique_id(), method_name])
-		_rpc_queue.push_back({
-			"sender_id": sender_id,
-			"node_path": node_path,
-			"method_name": method_name,
-			"transmit_time_ticks": transmit_time_ticks,
-			"args": args
-		})
-		return
+		print("%s request call %s on %s" % [multiplayer.get_unique_id(), rpc_info.method_name, rpc_info.node_path])
+	if _should_buffer_incoming_rpc(rpc_info.transmit_time_ticks):
+		print("%s adding %s to queue" % [multiplayer.get_unique_id(), rpc_info.method_name])
+		_rpc_queue.push_back(rpc_info)
 
-	var node := get_tree().root.get_node_or_null(node_path)
+	var node := get_tree().root.get_node_or_null(rpc_info.node_path)
 	if not is_instance_valid(node):
 		# TODO request node if it doesn't exist for me
-		print("Cannot call %s on %s because it doesn't exist in this scene tree" % [method_name, node_path])
+		print("Cannot call %s on %s because it doesn't exist in this scene tree" % [rpc_info.method_name, rpc_info.node_path])
 		return
 
-	var method_rpc_config := _get_rpc_config_from_node_method_name(node, method_name)
-	if method_rpc_config.rpc_mode == MultiplayerAPI.RPC_MODE_AUTHORITY and sender_id != 1:
-		print("Received rpc from player %s on server only method %s, REJECTING" % [sender_id, method_name])
+	var method_rpc_config := _get_rpc_config_from_node_method_name(node, rpc_info.method_name)
+	if method_rpc_config.rpc_mode == MultiplayerAPI.RPC_MODE_AUTHORITY and rpc_info.sender_id != 1:
+		print("Received rpc from player %s on server only method %s, REJECTING" % [rpc_info.sender_id, rpc_info.method_name])
 		return
 
-	_current_sender_id = sender_id
-	_current_transmit_time_ticks = transmit_time_ticks
+	_current_sender_id = rpc_info.sender_id
+	_current_transmit_time_ticks = rpc_info.transmit_time_ticks
 
 	if debug:
-		print("%s calling %s on %s" % [multiplayer.get_unique_id(), method_name, node_path])
-	node.callv(method_name, args)
+		print("%s calling %s on %s" % [multiplayer.get_unique_id(), rpc_info.method_name, rpc_info.node_path])
+	node.callv(rpc_info.method_name, rpc_info.args)
 
 
 func _get_rpc_config_from_node_method_name(node: Node, method_name: StringName) -> Dictionary:
@@ -127,13 +129,7 @@ func run_old_rpcs() -> void:
 			print("%s skipping call %s on %s because it is too old" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
 			continue
 
-		_generic_receive_rpc_id_safe(
-			rpc_data.sender_id,
-			rpc_data.node_path,
-			rpc_data.method_name,
-			rpc_data.transmit_time_ticks,
-			rpc_data.args
-		)
+		_generic_receive_rpc_id_safe(rpc_data)
 
 		if debug:
 			print("%s running old rpc %s on %s" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
