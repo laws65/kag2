@@ -7,7 +7,7 @@ signal joined_server
 var has_joined_server: bool = false
 
 var get_join_data_callable: Callable
-
+var spawn_time := -1
 
 
 func _ready() -> void:
@@ -17,16 +17,20 @@ func _ready() -> void:
 func _on_Player_joined(player: Player) -> void:
 	if player.is_my_player():
 		has_joined_server = true
+		NetworkedClock.enable_on_client()
 		joined_server.emit()
 
 
 func join_server(address: String="localhost", port: int=50301) -> void:
+
 	var peer := ENetMultiplayerPeer.new()
 
 	var err := peer.create_client(address, port)
 	if err:
 		_handle_join_error(err)
 		return
+
+	Network.buffer_incoming_rpcs = true
 
 	multiplayer.set_multiplayer_peer(peer)
 
@@ -43,7 +47,9 @@ func _handle_join_error(err: Error) -> void:
 
 
 func _on_connected_to_server() -> void:
+	NetworkedClock.initialise_on_client()
 	connection_established.emit()
+	_transmit_join_data()
 	print("Successfully connected to server")
 
 
@@ -55,8 +61,7 @@ func _on_server_disconnected() -> void:
 	print("Server disconnected")
 
 
-@rpc("authority", "reliable")
-func send_join_data() -> void:
+func _transmit_join_data() -> void:
 	assert(get_join_data_callable, "Developer must set Client.get_join_data_callable!")
 	var join_data := get_join_data_callable.call()
 	Server.receive_client_join_data.rpc_id(1, join_data)
@@ -73,6 +78,7 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 	var serialised_players: Array[PackedByteArray] = initial_state["players"]
 	for serialised_player in serialised_players:
 		var deserialised_player := Player.deserialise(serialised_player)
+		print("adding old player")
 		Players.add_old_player(deserialised_player)
 
 	var blobs: Array[Dictionary] = initial_state["blobs"]
@@ -81,7 +87,18 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 		var spawn_data: Dictionary = blob["spawn_data"]
 		Blobs._create_blob(filepath, spawn_data)
 
+	spawn_time = initial_state["time_ticks"] # TODO figure out when i want to start client_finished_loading, is it when their player iscreated? if so fi this shit
+	Network.buffer_cutoff_time_ticks = initial_state["time_ticks"]
+
+	print("Telling server im done loading")
 	Server.client_finished_loading.rpc_id(1)
+
+
+@rpc("authority", "reliable")
+func prepare_to_spawn_in(server_transmit_time_ticks: int) -> void:
+	print("I have been told to prepare to spawn in, buffer time is %s" % server_transmit_time_ticks)
+	Network.buffer_incoming_rpcs = false
+	Network.accept_rpcs_after_time_ticks = server_transmit_time_ticks
 
 
 func get_my_id() -> int:

@@ -13,12 +13,18 @@ var custom_client_join_data_validator = func(data: Dictionary):
 var startup_immediately = true
 func _ready() -> void:
 	Server.server_started.connect(func():
-		$CanvasLayer/Control/Label2.text = "You are server"; $CanvasLayer/Control/Control.hide())
+		%Whoami.text = "You are server"; $CanvasLayer/Control/Control.hide())
 	Client.connection_established.connect(func():
-		$CanvasLayer/Control/Label2.text = "You are %s" % Client.get_my_id(); $CanvasLayer/Control/Control.hide())
+		%Whoami.text = "You are %s" % Client.get_my_id(); $CanvasLayer/Control/Control.hide())
 	Players.new_player_joined.connect(_on_Player_joined)
 	Players.player_left.connect(_on_Player_left)
-
+	Blobs.blob_created.connect(
+		func(_blob: Blob):
+			var blobs := Blobs.get_blobs()
+			%BlobList.text = ""
+			for blob in blobs:
+				%BlobList.text += "%s \n" % blob.get_id()
+	)
 	Client.get_join_data_callable = custom_join_data_callable
 	Server.client_join_data_validator = custom_client_join_data_validator
 
@@ -43,14 +49,14 @@ func _on_Player_left(_old_player: Player) -> void:
 
 
 func _rebuild_player_list() -> void:
-	$CanvasLayer/Control/Label.text = ""
+	%PlayerList.text = ""
 	var players := Players.get_players()
 	for player in players:
-		$CanvasLayer/Control/Label.text += player.get_prop("username") + "- " + str(player.get_id()) + "\n"
+		%PlayerList.text += player.get_prop("username") + "- " + str(player.get_id()) + "\n"
 
 
 func _on_fps_timer_timeout() -> void:
-	$CanvasLayer/Control/Label3.text = "FPS: %s" % int(Engine.get_frames_per_second())
+	%FPS.text = "FPS: %s" % int(Engine.get_frames_per_second())
 
 
 func _on_c_button_button_up() -> void:

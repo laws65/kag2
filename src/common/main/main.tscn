@@ -328,29 +328,40 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/Control" unique_id=1911907176]
+[node name="PlayerList" type="Label" parent="CanvasLayer/Control" unique_id=1911907176]
+unique_name_in_owner = true
 layout_mode = 0
-offset_left = 242.0
-offset_top = 129.0
-offset_right = 834.0
-offset_bottom = 618.0
+offset_top = 47.0
+offset_right = 592.0
+offset_bottom = 536.0
 theme_override_font_sizes/font_size = 32
 
-[node name="Label2" type="Label" parent="CanvasLayer/Control" unique_id=969355377]
+[node name="BlobList" type="Label" parent="CanvasLayer/Control" unique_id=905935491]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 11.0
+offset_top = 305.0
+offset_right = 603.0
+offset_bottom = 794.0
+theme_override_font_sizes/font_size = 32
+
+[node name="Whoami" type="Label" parent="CanvasLayer/Control" unique_id=969355377]
+unique_name_in_owner = true
 layout_mode = 0
 offset_left = 13.0
 offset_top = 596.0
 offset_right = 53.0
 offset_bottom = 619.0
 
-[node name="Label3" type="Label" parent="CanvasLayer/Control" unique_id=1850321564]
+[node name="FPS" type="Label" parent="CanvasLayer/Control" unique_id=1850321564]
+unique_name_in_owner = true
 layout_mode = 0
-offset_left = 14.0
-offset_top = 12.0
-offset_right = 54.0
-offset_bottom = 35.0
+offset_left = 6.0
+offset_top = 1.0
+offset_right = 46.0
+offset_bottom = 24.0
 
-[node name="FPSTimer" type="Timer" parent="CanvasLayer/Control/Label3" unique_id=5333090]
+[node name="FPSTimer" type="Timer" parent="CanvasLayer/Control/FPS" unique_id=5333090]
 autostart = true
 
 [node name="Control" type="Control" parent="CanvasLayer/Control" unique_id=1104441843]
@@ -440,6 +451,6 @@ tile_map_data = PackedByteArray("AADZ/wkAAAAAAAMAAADZ/woAAAAAAAMAAADZ/wsAAAAAAAM
 tile_set = SubResource("TileSet_ulfwm")
 navigation_enabled = false
 
-[connection signal="timeout" from="CanvasLayer/Control/Label3/FPSTimer" to="." method="_on_fps_timer_timeout"]
+[connection signal="timeout" from="CanvasLayer/Control/FPS/FPSTimer" to="." method="_on_fps_timer_timeout"]
 [connection signal="button_up" from="CanvasLayer/Control/Control/CButton" to="." method="_on_c_button_button_up"]
 [connection signal="button_up" from="CanvasLayer/Control/Control/SButton" to="." method="_on_s_button_button_up"]

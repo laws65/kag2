@@ -20,7 +20,7 @@ var time_dilation_factor := 1.0
 
 var latest_server_time_ticks: int = 0 # client only
 var latest_server_engine_time_msecs: float = 0.0 # client only
-
+var _should_signal_ticks := false # client only
 
 var ticks_per_second: int:
 	set(value):
@@ -44,21 +44,24 @@ var interpolation_fraction: float:
 		return time_since_last_tick_msecs / tick_duration_msecs
 
 
+func initialise_on_client() -> void:
+	ticks_per_second = INITIAL_TICKS_PER_SECOND
+	set_process(true)
+	_calculate_initial_time_and_latency()
+
+
+func enable_on_client() -> void:
+	_should_signal_ticks = true
+
+
+func enable_on_server() -> void:
+	set_process(true)
+
+
 func _ready() -> void:
 	set_process(false)
 
 	ticks_per_second = INITIAL_TICKS_PER_SECOND
-
-	Client.connection_established.connect(
-		func():
-			set_process(true)
-			_calculate_initial_time_and_latency()
-	)
-
-	Server.server_started.connect(
-		func():
-			set_process(true)
-	)
 
 	posttick.connect(_on_post_tick)
 
@@ -76,7 +79,7 @@ func _process(delta: float) -> void:
 		time_ticks += 1
 		time_since_last_tick_msecs -= tick_duration_msecs
 
-		if not Client.has_joined_server and not multiplayer.is_server():
+		if not _should_signal_ticks and not multiplayer.is_server():
 			return
 
 		pretick.emit()

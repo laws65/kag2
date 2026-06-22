@@ -5,7 +5,7 @@ signal server_started
 
 var _unregistered_peers: Array[int]
 var _client_join_data: Dictionary[int, Dictionary]
-
+var _loaded_new_peers: Array[int]
 
 var client_join_data_validator: Callable = func(join_data: Dictionary): return true
 
@@ -23,6 +23,8 @@ func start_server(port: int=50301) -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
+	NetworkedClock.enable_on_server()
+
 	server_started.emit()
 
 
@@ -36,25 +38,20 @@ func _handle_server_error(err: Error) -> void:
 func _on_peer_connected(player_id: int) -> void:
 	print("Peer ", player_id, " has connected")
 	_unregistered_peers.push_back(player_id)
-	Client.send_join_data.rpc_id(player_id)
+	_transmit_initial_state_to(player_id)
 
 
-@rpc("any_peer", "reliable")
-func receive_client_join_data(join_data: Dictionary) -> void:
-	var player_id := multiplayer.get_remote_sender_id()
-
-	if _client_allowed_to_join(player_id, join_data):
-		_client_join_data[player_id] = join_data
-		_transmit_initial_state_to(player_id)
-	else:
-		print("Player data is invalid! Closing connection")
-		_unregistered_peers.erase(player_id)
-		_client_join_data.erase(player_id)
-		kick_player(player_id, "Invalid join data")
+func _on_peer_disconnected(player_id: int) -> void:
+	print("Peer ", player_id, " has disconnected")
+	_unregistered_peers.erase(player_id)
+	_client_join_data.erase(player_id)
+	_loaded_new_peers.erase(player_id)
+	Players.deregister_player.rpc(player_id)
 
 
 func _transmit_initial_state_to(player_id: int) -> void:
 	var serialised_players: Array[PackedByteArray]
+
 	var players := Players.get_players()
 	for player in players:
 		serialised_players.push_back(player.serialise())
@@ -70,17 +67,36 @@ func _transmit_initial_state_to(player_id: int) -> void:
 	var initial_state := {
 		"players": serialised_players,
 		"blobs": blob_data,
+		"time_ticks": NetworkedClock.time_ticks,
 	}
+
 	Client.receive_initial_state.rpc_id(player_id, initial_state)
+
+
+@rpc("any_peer", "reliable")
+func receive_client_join_data(join_data: Dictionary) -> void:
+	var player_id := multiplayer.get_remote_sender_id()
+	_client_join_data[player_id] = join_data
+
+	if not _client_join_data_valid(player_id):
+		print("Player data is invalid! Closing connection")
+		kick_player(player_id, "Invalid join data")
+
+		_unregistered_peers.erase(player_id)
+		_loaded_new_peers.erase(player_id)
+		_client_join_data.erase(player_id)
+
+	if _can_spawn_new_player(player_id):
+		_spawn_new_player(player_id)
 
 
 @rpc("any_peer", "reliable")
 func client_finished_loading() -> void:
 	var player_id := multiplayer.get_remote_sender_id()
-	var join_data: Dictionary = _client_join_data[player_id]
-	_unregistered_peers.erase(player_id)
-	_client_join_data.erase(player_id)
-	register_player(player_id, join_data)
+	_loaded_new_peers.push_back(player_id)
+
+	if _can_spawn_new_player(player_id):
+		_spawn_new_player(player_id)
 
 
 func kick_player(player_id: int, reason: String) -> void:
@@ -92,26 +108,28 @@ func kick_player(player_id: int, reason: String) -> void:
 		multiplayer.disconnect_peer(player_id)
 
 
-func _client_allowed_to_join(player_id: int, join_data: Dictionary) -> bool:
-	return player_id in _unregistered_peers and _join_data_valid(join_data)
+func _client_join_data_valid(player_id: int) -> bool:
+	return (
+		_client_join_data.has(player_id) and
+		client_join_data_validator.call(_client_join_data[player_id])
+	)
 
 
-func _join_data_valid(join_data: Dictionary) -> bool:
-	return client_join_data_validator.call(join_data)
+func _can_spawn_new_player(player_id: int) -> bool:
+	return (
+		_unregistered_peers.has(player_id) and
+		_loaded_new_peers.has(player_id) and
+		_client_join_data_valid(player_id)
+	)
 
 
-func _on_peer_disconnected(player_id: int) -> void:
-	print("Peer ", player_id, " has disconnected")
+func _spawn_new_player(player_id: int) -> void:
+	var join_data := _client_join_data[player_id]
+
+	Client.prepare_to_spawn_in.rpc_id(player_id, NetworkedClock.time_ticks)
+
+	Network.rpc_id_safe(0, Players.register_player, player_id, join_data)
+
 	_unregistered_peers.erase(player_id)
+	_loaded_new_peers.erase(player_id)
 	_client_join_data.erase(player_id)
-	deregister_player(player_id)
-
-
-func register_player(player_id: int, extra_data: Dictionary) -> void:
-	assert(multiplayer.is_server())
-	Players.register_player.rpc(player_id, extra_data)
-
-
-func deregister_player(player_id: int) -> void:
-	assert(multiplayer.is_server())
-	Players.deregister_player.rpc(player_id)
