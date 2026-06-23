@@ -3,6 +3,7 @@ class_name Blob
 
 
 signal player_id_changed(old_player_id: int, new_player_id: int)
+signal death()
 
 @export var props_to_track_per_snapshot: Array[String] = ["position", "velocity"]
 @export var props_to_spawn_with: Array[String] = ["position", "_player_id"]
@@ -126,3 +127,17 @@ func _resolve_collision(collision: KinematicCollision2D) -> void:
 
 func _on_tick() -> void:
 	pass
+
+
+func server_die() -> void:
+	assert(multiplayer.is_server(), "Can't kill blob on client")
+	Network.rpc_id_safe(0, _die)
+
+
+@rpc("authority", "call_local", "reliable")
+func _die() -> void:
+	queue_free()
+	get_parent().remove_child(self)
+
+	death.emit()
+	Blobs.on_blob_die.emit(self)

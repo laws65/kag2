@@ -10,11 +10,20 @@ func _ready() -> void:
 	Players.player_left.connect(_on_Player_left)
 	Blobs.blob_created.connect(
 		func(_blob: Blob):
-			var blobs := Blobs.get_blobs()
-			%BlobList.text = ""
-			for blob in blobs:
-				%BlobList.text += "%s \n" % blob.get_id()
+			_rebuild_blob_list()
 	)
+	Blobs.on_blob_die.connect(
+		func (_blob: Blob):
+			_rebuild_blob_list()
+	)
+
+
+
+func _rebuild_blob_list() -> void:
+	var blobs := Blobs.get_blobs()
+	%BlobList.text = ""
+	for blob in blobs:
+		%BlobList.text += "%s \n" % blob.get_id()
 
 
 func _on_Player_joined(_new_player: Player) -> void:

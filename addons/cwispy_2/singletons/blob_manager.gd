@@ -3,6 +3,7 @@ extends Node
 
 signal blob_created(blob: Blob)
 signal new_blob_created(new_blob: Blob)
+signal on_blob_die(dead_blob: Blob)
 
 @onready var _blobs_parent := get_node("/root/Main/World/Blobs")
 
