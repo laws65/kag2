@@ -5,13 +5,13 @@ var _rpc_queue: Array[RPCInfo]
 var debug: bool = true
 
 
-var _current_transmit_time_ticks := -1
-var _current_sender_id := -1
+var _current_transmit_time_ticks: int = -1
+var _current_sender_id: int = -1
 
 var buffer_incoming_rpcs: bool = false
 var accept_rpcs_after_time_ticks: int = -1
 
-var buffer_cull_before_time_ticks := -1
+var buffer_cull_before_time_ticks: int = -1
 
 
 func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:

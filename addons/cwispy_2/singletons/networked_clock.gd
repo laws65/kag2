@@ -14,7 +14,7 @@ var decimal_collector: float = 0.0
 
 var latency_array: Array[float]
 
-var time_ticks := 0
+var time_ticks: int = 0
 var time_since_last_tick_msecs := 0.0
 var time_dilation_factor := 1.0
 
