@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://dewtijuj6jvxu"]
+
+[ext_resource type="Script" uid="uid://4lf2m6mlvkcy" path="res://src/client/gui/temp/temp_main_menu.gd" id="1_5d477"]
+
+[node name="TempMainMenu" type="Control" unique_id=275198668]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5d477")
+
+[node name="CIP" type="LineEdit" parent="." unique_id=1649668794]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 313.0
+offset_top = 258.0
+offset_right = 493.0
+offset_bottom = 289.0
+text = "127.0.0.1"
+placeholder_text = "IP"
+
+[node name="CPort" type="LineEdit" parent="." unique_id=1685626853]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 316.0
+offset_top = 309.0
+offset_right = 384.5
+offset_bottom = 340.0
+text = "50301"
+placeholder_text = "Port"
+
+[node name="CUsername" type="LineEdit" parent="." unique_id=1758497091]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 320.0
+offset_top = 359.0
+offset_right = 537.0
+offset_bottom = 390.0
+placeholder_text = "username"
+
+[node name="CButton" type="Button" parent="." unique_id=1772139172]
+layout_mode = 0
+offset_left = 326.0
+offset_top = 419.0
+offset_right = 423.0
+offset_bottom = 450.0
+text = "Join server"
+
+[node name="SButton" type="Button" parent="." unique_id=1171650362]
+layout_mode = 0
+offset_left = 780.0
+offset_top = 339.0
+offset_right = 877.0
+offset_bottom = 370.0
+text = "Host server"
+
+[node name="SPort" type="LineEdit" parent="." unique_id=1325850842]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 774.0
+offset_top = 267.0
+offset_right = 842.5
+offset_bottom = 298.0
+text = "50301"
+placeholder_text = "Port"
+
+[connection signal="button_up" from="CButton" to="." method="_on_c_button_button_up"]
+[connection signal="button_up" from="SButton" to="." method="_on_s_button_button_up"]

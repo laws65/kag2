@@ -12,6 +12,7 @@ signal player_id_changed(old_player_id: int, new_player_id: int)
 @export var display_to_interpolate: Array[Node2D]
 var _player_id := -1
 
+@export var health = 3.0
 
 func _init() -> void:
 	NetworkedClock.tick.connect(_on_tick)

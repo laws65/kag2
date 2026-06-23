@@ -6,7 +6,8 @@ signal joined_server
 
 var has_joined_server: bool = false
 
-var get_join_data_callable: Callable
+var custom_join_data: Dictionary = {"username": "hello"}
+
 var spawn_time := -1
 
 
@@ -22,7 +23,6 @@ func _on_Player_joined(player: Player) -> void:
 
 
 func join_server(address: String="localhost", port: int=50301) -> void:
-
 	var peer := ENetMultiplayerPeer.new()
 
 	var err := peer.create_client(address, port)
@@ -62,9 +62,7 @@ func _on_server_disconnected() -> void:
 
 
 func _transmit_join_data() -> void:
-	assert(get_join_data_callable, "Developer must set Client.get_join_data_callable!")
-	var join_data := get_join_data_callable.call()
-	Server.receive_client_join_data.rpc_id(1, join_data)
+	Server.receive_client_join_data.rpc_id(1, custom_join_data)
 
 
 @rpc("authority", "reliable")

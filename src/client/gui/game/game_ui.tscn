@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://b26bewbpasrs6"]
+
+[ext_resource type="Script" uid="uid://dflax38f0eola" path="res://src/client/gui/game/game_ui.gd" id="1_jigvv"]
+
+[node name="GameUI" type="Control" unique_id=821774766]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jigvv")
+
+[node name="PlayerList" type="Label" parent="." unique_id=2080563754]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 47.0
+offset_right = 592.0
+offset_bottom = 536.0
+theme_override_font_sizes/font_size = 32
+
+[node name="BlobList" type="Label" parent="." unique_id=551076826]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 11.0
+offset_top = 305.0
+offset_right = 603.0
+offset_bottom = 794.0
+theme_override_font_sizes/font_size = 32
+
+[node name="Whoami" type="Label" parent="." unique_id=138548975]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 13.0
+offset_top = 596.0
+offset_right = 53.0
+offset_bottom = 619.0
+
+[node name="FPS" type="Label" parent="." unique_id=849399543]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 6.0
+offset_top = 1.0
+offset_right = 46.0
+offset_bottom = 24.0
+
+[node name="FPSTimer" type="Timer" parent="FPS" unique_id=1706191128]
+autostart = true
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1616294584]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
