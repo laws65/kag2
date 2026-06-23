@@ -87,8 +87,8 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 		var spawn_data: Dictionary = blob["spawn_data"]
 		Blobs._create_blob(filepath, spawn_data)
 
-	spawn_time = initial_state["time_ticks"] # TODO figure out when i want to start client_finished_loading, is it when their player iscreated? if so fi this shit
-	Network.buffer_cutoff_time_ticks = initial_state["time_ticks"]
+	spawn_time = initial_state["time_ticks"]
+	Network.buffer_cull_before_time_ticks = initial_state["time_ticks"] # reject rpcs sent before world state
 
 	print("Telling server im done loading")
 	Server.client_finished_loading.rpc_id(1)

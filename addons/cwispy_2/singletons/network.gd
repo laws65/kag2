@@ -11,7 +11,7 @@ var _current_sender_id := -1
 var buffer_incoming_rpcs: bool = false
 var accept_rpcs_after_time_ticks: int = -1
 
-var buffer_cutoff_time_ticks := -1
+var buffer_cull_before_time_ticks := -1
 
 
 func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
@@ -36,10 +36,6 @@ func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
 	var rpc_info := RPCInfo.new(multiplayer.get_unique_id(), node_path, method_name, transmit_time_ticks, args)
 	var serialised_rpc_info := RPCInfo.serialise(rpc_info)
 
-	if method_rpc_config.get("call_local"):
-		_generic_receive_rpc_id_safe(rpc_info)
-
-
 	match method_rpc_config.transfer_mode:
 		MultiplayerPeer.TRANSFER_MODE_RELIABLE:
 			_receive_rpc_id_safe_reliable.rpc_id(target_id, serialised_rpc_info)
@@ -47,6 +43,9 @@ func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
 			_receive_rpc_id_safe_unreliable.rpc_id(target_id, serialised_rpc_info)
 		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED:
 			_receive_rpc_id_safe_unreliable_ordered.rpc_id(target_id, serialised_rpc_info)
+
+	if method_rpc_config.get("call_local"):
+		_generic_receive_rpc_id_safe(rpc_info)
 
 
 @rpc("reliable", "any_peer")
@@ -125,7 +124,7 @@ func _get_rpc_config_from_node_method_name(node: Node, method_name: StringName) 
 
 func run_old_rpcs() -> void:
 	for rpc_data in _rpc_queue:
-		if rpc_data.transmit_time_ticks < buffer_cutoff_time_ticks:
+		if rpc_data.transmit_time_ticks < buffer_cull_before_time_ticks:
 			print("%s skipping call %s on %s because it is too old" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
 			continue
 
@@ -138,8 +137,8 @@ func run_old_rpcs() -> void:
 
 
 func get_rpc_transmit_time_ticks() -> int:
-	return -1
+	return _current_transmit_time_ticks
 
 
 func get_rpc_sender_id() -> int:
-	return -1
+	return _current_sender_id

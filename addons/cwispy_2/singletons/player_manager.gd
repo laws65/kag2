@@ -23,15 +23,7 @@ func get_player_by_id(player_id: int) -> Player:
 func register_player(player_id: int, extra_data: Dictionary={}) -> void:
 	var new_player := Player.new(player_id, extra_data)
 	_players_parent.add_child(new_player, true)
-
-	if multiplayer.is_server(): # TODO remove this hack
-		pass
-		# TODO the problem here is that the server tries to spawn in the blob,
-		# but if a player joins during this tick then well that's fucked
-		#await NetworkedClock.posttick
-
 	new_player_joined.emit(new_player)
-
 
 
 func add_old_player(player: Player) -> void:
