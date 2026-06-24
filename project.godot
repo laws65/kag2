@@ -35,12 +35,11 @@ window/vsync/vsync_mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GDTask/plugin.cfg", "res://addons/cwispy_2/plugin.cfg")
+enabled=PackedStringArray("res://addons/cwispy_2/plugin.cfg")
 
 [file_customization]
 
 folder_colors={
-"res://addons/GDTask/": "gray",
 "res://addons/godot-rapier2d/": "gray"
 }
 
