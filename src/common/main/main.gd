@@ -8,6 +8,7 @@ var startup_immediately = true
 
 
 func _ready() -> void:
+	Blobs.set_blobs_parent(get_node("World/Blobs"))
 	Players.new_player_joined.connect(_on_Player_joined)
 	Players.player_left.connect(_on_Player_left)
 	Server.client_join_data_validator = custom_client_join_data_validator

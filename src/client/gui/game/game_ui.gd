@@ -5,7 +5,7 @@ func _ready() -> void:
 	Server.server_started.connect(func():
 		%Whoami.text = "You are server")
 	Client.connection_established.connect(func():
-		%Whoami.text = "You are %s" % Client.get_my_id())
+		%Whoami.text = "You are %s" % multiplayer.get_unique_id())
 	Players.new_player_joined.connect(_on_Player_joined)
 	Players.player_left.connect(_on_Player_left)
 	Blobs.blob_created.connect(
@@ -16,7 +16,6 @@ func _ready() -> void:
 		func (_blob: Blob):
 			_rebuild_blob_list()
 	)
-
 
 
 func _rebuild_blob_list() -> void:

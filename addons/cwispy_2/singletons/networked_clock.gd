@@ -45,7 +45,6 @@ var interpolation_fraction: float:
 
 
 func initialise_on_client() -> void:
-	ticks_per_second = INITIAL_TICKS_PER_SECOND
 	set_process(true)
 	_calculate_initial_time_and_latency()
 
@@ -58,12 +57,27 @@ func enable_on_server() -> void:
 	set_process(true)
 
 
+func shutdown_on_client() -> void:
+	set_process(false)
+	latency_msecs = 0.0
+	client_clock = 0.0
+	decimal_collector = 0.0
+
+	latency_array.clear()
+
+	time_ticks = 0
+	time_since_last_tick_msecs = 0.0
+	time_dilation_factor = 1.0
+
+	latest_server_time_ticks = 0
+	latest_server_engine_time_msecs = 0.0
+	_should_signal_ticks = false
+
+
 func _ready() -> void:
 	set_process(false)
 
 	ticks_per_second = INITIAL_TICKS_PER_SECOND
-
-	posttick.connect(_on_post_tick)
 
 	var space := get_viewport().world_2d.space
 	PhysicsServer2D.space_set_active(space, false)
@@ -76,23 +90,25 @@ func _process(delta: float) -> void:
 		_adjust_time_dilation_factor()
 
 	if time_since_last_tick_msecs > tick_duration_msecs:
-		time_ticks += 1
-		time_since_last_tick_msecs -= tick_duration_msecs
-
-		if not _should_signal_ticks and not multiplayer.is_server():
-			return
-
-		pretick.emit()
-		tick.emit()
-
-		var space := get_viewport().world_2d.space
-		RapierPhysicsServer2D.space_step(space, time_since_last_tick_msecs / 1000.0)
-		RapierPhysicsServer2D.space_flush_queries(space)
-
-		posttick.emit()
+		_run_tick()
 
 
-func _on_post_tick() -> void:
+func _run_tick() -> void:
+	time_ticks += 1
+	time_since_last_tick_msecs -= tick_duration_msecs
+
+	if not _should_signal_ticks and not multiplayer.is_server():
+		return
+
+	pretick.emit()
+	tick.emit()
+
+	var space := get_viewport().world_2d.space
+	RapierPhysicsServer2D.space_step(space, time_since_last_tick_msecs / 1000.0)
+	RapierPhysicsServer2D.space_flush_queries(space)
+
+	posttick.emit()
+
 	if multiplayer.is_server():
 		_broadcast_server_time()
 	else:
@@ -191,9 +207,11 @@ func _receive_initial_time_and_latency(
 	latest_server_engine_time_msecs = server_engine_time_msecs
 
 
+#region HELPER FUNCS
 func msecs_to_ticks(time_msecs: float) -> int:
 	return ceili(time_msecs / tick_duration_msecs)
 
 
 func ticks_to_msecs(time_ticks: int) -> float:
 	return time_ticks * tick_duration_msecs
+#endregion

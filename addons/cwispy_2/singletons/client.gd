@@ -3,6 +3,7 @@ extends Node
 
 signal connection_established
 signal joined_server
+signal left_server
 
 var has_joined_server: bool = false
 
@@ -49,7 +50,7 @@ func _handle_join_error(err: Error) -> void:
 func _on_connected_to_server() -> void:
 	NetworkedClock.initialise_on_client()
 	connection_established.emit()
-	_transmit_join_data()
+	Server.receive_client_join_data.rpc_id(1, custom_join_data)
 	print("Successfully connected to server")
 
 
@@ -59,10 +60,12 @@ func _on_connection_failed() -> void:
 
 func _on_server_disconnected() -> void:
 	print("Server disconnected")
-
-
-func _transmit_join_data() -> void:
-	Server.receive_client_join_data.rpc_id(1, custom_join_data)
+	left_server.emit()
+	NetworkedClock.shutdown_on_client()
+	Network.reset()
+	Blobs.reset()
+	Players.reset()
+	SyncManager.reset()
 
 
 @rpc("authority", "reliable")
@@ -85,7 +88,7 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 		Blobs._create_blob(filepath, spawn_data)
 
 	spawn_time = initial_state["time_ticks"]
-	Network.buffer_cull_before_time_ticks = initial_state["time_ticks"] # reject rpcs sent before world state
+	Network.cull_buffer_before_time_ticks = initial_state["time_ticks"] # reject rpcs sent before world state
 
 	Server.client_finished_loading.rpc_id(1)
 
@@ -96,21 +99,5 @@ func prepare_to_spawn_in(server_transmit_time_ticks: int) -> void:
 	Network.accept_rpcs_after_time_ticks = server_transmit_time_ticks
 
 
-func get_my_id() -> int:
-	return multiplayer.get_unique_id()
-
-
-func get_my_player() -> Player:
-	return Players.get_player_by_id(get_my_id())
-
-
-func has_blob() -> bool:
-	return get_my_player().has_blob()
-
-
-func get_my_blob() -> Blob:
-	return get_my_player().get_blob()
-
-
-func get_my_blob_id() -> int:
-	return get_my_player().get_blob_id()
+func disconnect_from_server() -> void:
+	multiplayer.multiplayer_peer.close()

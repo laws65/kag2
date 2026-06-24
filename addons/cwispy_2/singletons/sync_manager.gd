@@ -6,12 +6,8 @@ var _interpolation_buffer_min_size_ticks := 0
 
 
 func _ready() -> void:
-	set_process(false)
-
 	NetworkedClock.pretick.connect(_on_pre_tick)
 	NetworkedClock.posttick.connect(_on_post_tick)
-
-	Client.joined_server.connect(func(): set_process(true))
 
 
 func _on_pre_tick() -> void:
@@ -22,8 +18,13 @@ func _on_pre_tick() -> void:
 func _on_post_tick() -> void:
 	if multiplayer.is_server():
 		_transmit_blob_snapshots()
-	elif Client.has_blob():
+	elif Blobs.has_local_blob():
 		_transmit_client_snapshot()
+
+
+func reset() -> void:
+	snapshot_buffer.clear()
+	_interpolation_buffer_min_size_ticks = 0
 
 
 func _render_world_snapshot_tick() -> void:
@@ -65,7 +66,7 @@ func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time_ti
 
 
 func _transmit_client_snapshot() -> void:
-	var my_blob := Client.get_my_blob()
+	var my_blob := Blobs.get_local_blob()
 	if is_instance_valid(my_blob):
 		var blob_snapshot := my_blob.get_snapshot()
 		_receive_client_blob_snapshot.rpc_id(1, blob_snapshot)

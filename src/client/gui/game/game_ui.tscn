@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b26bewbpasrs6"]
 
 [ext_resource type="Script" uid="uid://dflax38f0eola" path="res://src/client/gui/game/game_ui.gd" id="1_jigvv"]
+[ext_resource type="PackedScene" uid="uid://b4haj4iotr03q" path="res://src/client/gui/game/pause_menu.tscn" id="2_w0t28"]
 
 [node name="GameUI" type="Control" unique_id=821774766]
 layout_mode = 3
@@ -51,3 +52,7 @@ autostart = true
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="PauseMenu" parent="." unique_id=1322517163 instance=ExtResource("2_w0t28")]
+visible = false
+layout_mode = 1

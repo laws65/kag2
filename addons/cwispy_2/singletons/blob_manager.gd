@@ -5,7 +5,7 @@ signal blob_created(blob: Blob)
 signal new_blob_created(new_blob: Blob)
 signal on_blob_die(dead_blob: Blob)
 
-@onready var _blobs_parent := get_node("/root/Main/World/Blobs")
+var _blobs_parent: Node
 
 
 func server_create_blob(blob_filepath: String, spawn_data: Dictionary = {}) -> Blob:
@@ -44,6 +44,16 @@ func _create_blob(blob_filepath: String, spawn_data: Dictionary) -> Blob:
 	return new_blob
 
 
+func reset() -> void:
+	var blobs := get_blobs()
+	for blob in blobs:
+		blob.queue_free()
+		_blobs_parent.remove_child(blob)
+#region HELPER FUNCS
+func set_blobs_parent(blobs_parent: Node) -> void:
+	_blobs_parent = blobs_parent
+
+
 func get_blobs() -> Array[Blob]:
 	var blobs = _blobs_parent.get_children()
 	var casted: Array[Blob]
@@ -58,3 +68,18 @@ func get_blob_by_id(blob_id: int) -> Blob:
 		if blob.get_id() == blob_id:
 			return blob as Blob
 	return null
+
+
+func get_local_blob() -> Blob:
+	assert(not multiplayer.is_server(), "Local blob does not exist on the server!")
+
+	var local_player := Players.get_local_player()
+	return local_player.get_blob()
+
+
+func has_local_blob() -> bool:
+	assert(not multiplayer.is_server(), "Local blob does not exist on server!")
+
+	var local_player := Players.get_local_player()
+	return local_player.has_blob()
+#endregion

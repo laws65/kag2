@@ -1,17 +1,17 @@
 extends Node
 
 
-var _rpc_queue: Array[RPCInfo]
 var debug: bool = false
 
+var _rpc_queue: Array[RPCInfo]
 
 var _current_transmit_time_ticks: int = -1
 var _current_sender_id: int = -1
 
 var buffer_incoming_rpcs: bool = false
-var accept_rpcs_after_time_ticks: int = -1
+var cull_buffer_before_time_ticks: int = -1
 
-var buffer_cull_before_time_ticks: int = -1
+var accept_rpcs_after_time_ticks: int = -1
 
 
 func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
@@ -72,14 +72,6 @@ func _receive_rpc_id_safe_unreliable_ordered(serialised_rpc_info: PackedByteArra
 	_generic_receive_rpc_id_safe(rpc_info)
 
 
-func _should_buffer_incoming_rpc(transmit_time_ticks: int) -> bool:
-	return (
-		buffer_incoming_rpcs or
-		(not multiplayer.is_server() and transmit_time_ticks < accept_rpcs_after_time_ticks) or
-		(not multiplayer.is_server() and accept_rpcs_after_time_ticks < 0)
-	)
-
-
 func _generic_receive_rpc_id_safe(rpc_info: RPCInfo) -> void:
 	if debug:
 		print("%s request call %s on %s" % [multiplayer.get_unique_id(), rpc_info.method_name, rpc_info.node_path])
@@ -107,6 +99,41 @@ func _generic_receive_rpc_id_safe(rpc_info: RPCInfo) -> void:
 	node.callv(rpc_info.method_name, rpc_info.args)
 
 
+func run_old_rpcs() -> void:
+	for rpc_data in _rpc_queue:
+		if rpc_data.transmit_time_ticks < cull_buffer_before_time_ticks:
+			print("%s skipping call %s on %s because it is too old" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
+			continue
+
+		_generic_receive_rpc_id_safe(rpc_data)
+
+		if debug:
+			print("%s running old rpc %s on %s" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
+
+	_rpc_queue.clear()
+
+
+func reset() -> void:
+	_rpc_queue.clear()
+
+	_current_transmit_time_ticks = -1
+	_current_sender_id = -1
+
+	buffer_incoming_rpcs = false
+	cull_buffer_before_time_ticks = -1
+
+	accept_rpcs_after_time_ticks = -1
+
+
+#region HELPER FUNCS
+func _should_buffer_incoming_rpc(transmit_time_ticks: int) -> bool:
+	return (
+		buffer_incoming_rpcs or
+		(not multiplayer.is_server() and transmit_time_ticks < accept_rpcs_after_time_ticks) or
+		(not multiplayer.is_server() and accept_rpcs_after_time_ticks < 0)
+	)
+
+
 func _get_rpc_config_from_node_method_name(node: Node, method_name: StringName) -> Dictionary:
 	var node_script: Script = node.get_script()
 	assert(
@@ -123,23 +150,10 @@ func _get_rpc_config_from_node_method_name(node: Node, method_name: StringName) 
 	return config[method_name]
 
 
-func run_old_rpcs() -> void:
-	for rpc_data in _rpc_queue:
-		if rpc_data.transmit_time_ticks < buffer_cull_before_time_ticks:
-			print("%s skipping call %s on %s because it is too old" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
-			continue
-
-		_generic_receive_rpc_id_safe(rpc_data)
-
-		if debug:
-			print("%s running old rpc %s on %s" % [multiplayer.get_unique_id(), rpc_data.method_name, rpc_data.node_path])
-
-	_rpc_queue.clear()
-
-
 func get_rpc_transmit_time_ticks() -> int:
 	return _current_transmit_time_ticks
 
 
 func get_rpc_sender_id() -> int:
 	return _current_sender_id
+#endregion

@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://b4haj4iotr03q"]
+
+[ext_resource type="Script" uid="uid://bo8autubw11" path="res://src/client/gui/game/pause_menu.gd" id="1_2qvqn"]
+
+[node name="PauseMenu" type="ColorRect" unique_id=1322517163]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.20392157)
+script = ExtResource("1_2qvqn")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1310731064]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="Unpause" type="Button" parent="VBoxContainer" unique_id=1732931437]
+custom_minimum_size = Vector2(150, 30)
+layout_mode = 2
+
+[node name="Disconnect" type="Button" parent="VBoxContainer" unique_id=1691385678]
+custom_minimum_size = Vector2(150, 30)
+layout_mode = 2
+
+[node name="Quit" type="Button" parent="VBoxContainer" unique_id=1245030468]
+custom_minimum_size = Vector2(150, 30)
+layout_mode = 2
+
+[connection signal="button_up" from="VBoxContainer/Unpause" to="." method="_on_unpause_button_up"]
+[connection signal="button_up" from="VBoxContainer/Disconnect" to="." method="_on_disconnect_button_up"]
+[connection signal="button_up" from="VBoxContainer/Quit" to="." method="_on_quit_button_up"]

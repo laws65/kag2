@@ -7,18 +7,6 @@ signal player_left(old_player: Player)
 @onready var _players_parent := self
 
 
-func get_players() -> Array[Player]:
-	var players = _players_parent.get_children()
-	var casted: Array[Player]
-	for player in players:
-		casted.push_back(player as Player)
-	return casted
-
-
-func get_player_by_id(player_id: int) -> Player:
-	return _players_parent.get_node_or_null(str(player_id))
-
-
 @rpc("authority", "call_local", "reliable")
 func register_player(player_id: int, extra_data: Dictionary={}) -> void:
 	var new_player := Player.new(player_id, extra_data)
@@ -39,3 +27,30 @@ func deregister_player(player_id: int) -> void:
 	_players_parent.remove_child(player)
 	player.queue_free()
 	player_left.emit(player)
+
+
+func reset() -> void:
+	var players := get_players()
+	for player in players:
+		player.queue_free()
+		_players_parent.remove_child(player)
+
+
+#region HELPER FUNCS
+func get_players() -> Array[Player]:
+	var players = _players_parent.get_children()
+	var casted: Array[Player]
+	for player in players:
+		casted.push_back(player as Player)
+	return casted
+
+
+func get_player_by_id(player_id: int) -> Player:
+	return _players_parent.get_node_or_null(str(player_id))
+
+
+func get_local_player() -> Player:
+	assert(not multiplayer.is_server(), "Local player does not exist on the server!")
+
+	return get_player_by_id(multiplayer.get_unique_id())
+#endregion

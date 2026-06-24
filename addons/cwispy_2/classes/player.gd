@@ -82,4 +82,4 @@ func get_blob() -> Blob:
 
 
 func is_my_player() -> bool:
-	return get_id() == Client.get_my_id()
+	return get_id() == multiplayer.get_unique_id()

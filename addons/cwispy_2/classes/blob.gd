@@ -11,14 +11,85 @@ signal death()
 @export var client_controlled: bool = false
 
 @export var display_to_interpolate: Array[Node2D]
-var _player_id := -1
 
 @export var health = 3.0
+
+var _player_id := -1
+
 
 func _init() -> void:
 	NetworkedClock.tick.connect(_on_tick_internal)
 
 
+func _on_tick_internal() -> void:
+	if not is_queued_for_deletion():
+		_on_tick()
+
+
+func _on_tick() -> void:
+	pass
+
+
+func server_set_player(new_player: Player) -> void:
+	assert(multiplayer.is_server())
+	if new_player:
+		server_set_player_id(new_player.get_id())
+	else:
+		server_set_player_id(-1)
+
+
+func server_set_player_id(new_player_id: int) -> void:
+	assert(multiplayer.is_server())
+	Network.rpc_id_safe(0, _set_player_id, new_player_id)
+
+
+@rpc("call_local", "reliable", "authority")
+func _set_player_id(new_player_id: int, notify_own_player: bool = true) -> void:
+	var old_player_id := _player_id
+	_player_id = new_player_id
+
+	if notify_own_player:
+		var old_player := Players.get_player_by_id(old_player_id)
+		if old_player:
+			old_player._set_blob_id(-1, false)
+		var new_player := Players.get_player_by_id(new_player_id)
+		if new_player:
+			new_player._set_blob_id(get_id(), false)
+
+	player_id_changed.emit(old_player_id, new_player_id)
+
+
+func _resolve_collision(collision: KinematicCollision2D) -> void:
+	var colliding_body_instance_id: int = collision.get_collider_id()
+	var colliding_body: Node2D = instance_from_id(colliding_body_instance_id)
+
+	if not colliding_body is Blob:
+		return
+
+	colliding_body = colliding_body as Blob
+	print("player %s colliding with blob %s" % [get_player_id(), colliding_body.get_player_id()])
+
+	if colliding_body.get_player_id() == multiplayer.get_unique_id():
+		var colliding_body_velocity: Vector2 = velocity
+		colliding_body.velocity += colliding_body_velocity
+		#colliding_body.move_and_collide(velocity * get_physics_process_delta_time())
+
+
+func server_die() -> void:
+	assert(multiplayer.is_server(), "Can't kill blob on client")
+	Network.rpc_id_safe(0, _die)
+
+
+@rpc("authority", "call_local", "reliable")
+func _die() -> void:
+	queue_free()
+	get_parent().remove_child(self)
+
+	death.emit()
+	Blobs.on_blob_die.emit(self)
+
+
+#region HELPER FUNCS
 func set_id(new_id: int) -> void:
 	name = str(new_id)
 
@@ -64,35 +135,6 @@ func interpolate_snapshot(
 		set(prop, lerp(old_snapshot[prop], new_snapshot[prop], interpolation_delta))
 
 
-func server_set_player(new_player: Player) -> void:
-	assert(multiplayer.is_server())
-	if new_player:
-		server_set_player_id(new_player.get_id())
-	else:
-		server_set_player_id(-1)
-
-
-func server_set_player_id(new_player_id: int) -> void:
-	assert(multiplayer.is_server())
-	Network.rpc_id_safe(0, _set_player_id, new_player_id)
-
-
-@rpc("call_local", "reliable", "authority")
-func _set_player_id(new_player_id: int, notify_own_player: bool = true) -> void:
-	var old_player_id := _player_id
-	_player_id = new_player_id
-
-	if notify_own_player:
-		var old_player := Players.get_player_by_id(old_player_id)
-		if old_player:
-			old_player._set_blob_id(-1, false)
-		var new_player := Players.get_player_by_id(new_player_id)
-		if new_player:
-			new_player._set_blob_id(get_id(), false)
-
-	player_id_changed.emit(old_player_id, new_player_id)
-
-
 func get_player_id() -> int:
 	return _player_id
 
@@ -107,43 +149,5 @@ func has_player() -> bool:
 
 func is_my_blob() -> bool:
 	# TODO potentially investigate why multiplayer could be null on the server
-	return not multiplayer.is_server() and get_player_id() == Client.get_my_id()
-
-
-func _resolve_collision(collision: KinematicCollision2D) -> void:
-	var colliding_body_instance_id: int = collision.get_collider_id()
-	var colliding_body: Node2D = instance_from_id(colliding_body_instance_id)
-
-	if not colliding_body is Blob:
-		return
-
-	colliding_body = colliding_body as Blob
-	print("player %s colliding with blob %s" % [get_player_id(), colliding_body.get_player_id()])
-
-	if colliding_body.get_player_id() == Client.get_my_id():
-		var colliding_body_velocity: Vector2 = velocity
-		colliding_body.velocity += colliding_body_velocity
-		#colliding_body.move_and_collide(velocity * get_physics_process_delta_time())
-
-
-func _on_tick_internal() -> void:
-	if not is_queued_for_deletion():
-		_on_tick()
-
-
-func _on_tick() -> void:
-	pass
-
-
-func server_die() -> void:
-	assert(multiplayer.is_server(), "Can't kill blob on client")
-	Network.rpc_id_safe(0, _die)
-
-
-@rpc("authority", "call_local", "reliable")
-func _die() -> void:
-	queue_free()
-	get_parent().remove_child(self)
-
-	death.emit()
-	Blobs.on_blob_die.emit(self)
+	return not multiplayer.is_server() and get_player_id() == multiplayer.get_unique_id()
+#endregion
