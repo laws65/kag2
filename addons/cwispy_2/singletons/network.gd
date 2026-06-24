@@ -2,7 +2,7 @@ extends Node
 
 
 var _rpc_queue: Array[RPCInfo]
-var debug: bool = true
+var debug: bool = false
 
 
 var _current_transmit_time_ticks: int = -1
@@ -81,11 +81,12 @@ func _should_buffer_incoming_rpc(transmit_time_ticks: int) -> bool:
 
 
 func _generic_receive_rpc_id_safe(rpc_info: RPCInfo) -> void:
-	if not multiplayer.is_server():
+	if debug:
 		print("%s request call %s on %s" % [multiplayer.get_unique_id(), rpc_info.method_name, rpc_info.node_path])
 	if _should_buffer_incoming_rpc(rpc_info.transmit_time_ticks):
-		print("%s adding %s to queue" % [multiplayer.get_unique_id(), rpc_info.method_name])
 		_rpc_queue.push_back(rpc_info)
+		if debug:
+			print("%s adding %s to queue" % [multiplayer.get_unique_id(), rpc_info.method_name])
 
 	var node := get_tree().root.get_node_or_null(rpc_info.node_path)
 	if not is_instance_valid(node):

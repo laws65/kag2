@@ -76,7 +76,6 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 	var serialised_players: Array[PackedByteArray] = initial_state["players"]
 	for serialised_player in serialised_players:
 		var deserialised_player := Player.deserialise(serialised_player)
-		print("adding old player")
 		Players.add_old_player(deserialised_player)
 
 	var blobs: Array[Dictionary] = initial_state["blobs"]
@@ -88,13 +87,11 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 	spawn_time = initial_state["time_ticks"]
 	Network.buffer_cull_before_time_ticks = initial_state["time_ticks"] # reject rpcs sent before world state
 
-	print("Telling server im done loading")
 	Server.client_finished_loading.rpc_id(1)
 
 
 @rpc("authority", "reliable")
 func prepare_to_spawn_in(server_transmit_time_ticks: int) -> void:
-	print("I have been told to prepare to spawn in, buffer time is %s" % server_transmit_time_ticks)
 	Network.buffer_incoming_rpcs = false
 	Network.accept_rpcs_after_time_ticks = server_transmit_time_ticks
 
