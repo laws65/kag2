@@ -16,7 +16,7 @@ var _player_id := -1
 @export var health = 3.0
 
 func _init() -> void:
-	NetworkedClock.tick.connect(_on_tick)
+	NetworkedClock.tick.connect(_on_tick_internal)
 
 
 func set_id(new_id: int) -> void:
@@ -106,6 +106,7 @@ func has_player() -> bool:
 
 
 func is_my_blob() -> bool:
+	# TODO potentially investigate why multiplayer could be null on the server
 	return not multiplayer.is_server() and get_player_id() == Client.get_my_id()
 
 
@@ -123,6 +124,11 @@ func _resolve_collision(collision: KinematicCollision2D) -> void:
 		var colliding_body_velocity: Vector2 = velocity
 		colliding_body.velocity += colliding_body_velocity
 		#colliding_body.move_and_collide(velocity * get_physics_process_delta_time())
+
+
+func _on_tick_internal() -> void:
+	if not is_queued_for_deletion():
+		_on_tick()
 
 
 func _on_tick() -> void:
