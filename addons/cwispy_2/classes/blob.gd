@@ -1,3 +1,4 @@
+@icon ("res://addons/icons/human.svg")
 extends CharacterBody2D
 class_name Blob
 

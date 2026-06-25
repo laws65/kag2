@@ -1,3 +1,4 @@
+@icon ("res://addons/icons/tileset.svg")
 extends Node2D
 class_name Map
 
