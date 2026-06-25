@@ -23,7 +23,7 @@ func _on_Player_joined(player: Player) -> void:
 		joined_server.emit()
 
 
-func join_server(address: String="localhost", port: int=50301) -> void:
+func join_server(address: String="localhost", port: int=50302) -> void:
 	var peer := ENetMultiplayerPeer.new()
 
 	var err := peer.create_client(address, port)
@@ -89,6 +89,12 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 
 	spawn_time = initial_state["time_ticks"]
 	Network.cull_buffer_before_time_ticks = initial_state["time_ticks"] # reject rpcs sent before world state
+
+	var gamemode_path: String = initial_state["gamemode_path"]
+	var gamemode_data: Dictionary = initial_state["gamemode_data"]
+	print("%s receiving initial state" % multiplayer.get_unique_id())
+	GamemodeManager._load_gamemode(gamemode_path, gamemode_data)
+
 
 	Server.client_finished_loading.rpc_id(1)
 

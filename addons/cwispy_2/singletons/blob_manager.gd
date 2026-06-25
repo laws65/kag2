@@ -49,6 +49,20 @@ func reset() -> void:
 	for blob in blobs:
 		blob.queue_free()
 		_blobs_parent.remove_child(blob)
+
+
+
+func pass_spawn_data_into_dict(out: Dictionary) -> void:
+	var blob_data: Array[Dictionary]
+	var blobs := Blobs.get_blobs()
+	for blob in blobs:
+		blob_data.push_back({
+			"filepath": blob.scene_file_path,
+			"spawn_data": blob.get_spawn_data()
+		})
+	out["blobs"] = blob_data
+
+
 #region HELPER FUNCS
 func set_blobs_parent(blobs_parent: Node) -> void:
 	_blobs_parent = blobs_parent

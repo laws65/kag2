@@ -36,6 +36,16 @@ func reset() -> void:
 		_players_parent.remove_child(player)
 
 
+func pass_initial_spawn_data_into_dict(out: Dictionary) -> void:
+	var serialised_players: Array[PackedByteArray]
+
+	var players := get_players()
+	for player in players:
+		serialised_players.push_back(player.serialise())
+
+	out["players"] = serialised_players
+
+
 #region HELPER FUNCS
 func get_players() -> Array[Player]:
 	var players = _players_parent.get_children()

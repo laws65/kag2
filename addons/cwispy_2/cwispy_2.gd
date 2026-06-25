@@ -10,6 +10,8 @@ const autoloads := {
 	"Blobs": "blob_manager.gd",
 	"NetworkedClock": "networked_clock.gd",
 	"Network": "network.gd",
+	"GamemodeManager": "gamemode_manager.gd",
+	"MapManager": "map_manager.gd",
 }
 
 

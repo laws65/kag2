@@ -11,7 +11,7 @@ func _on_unpause_button_up() -> void:
 
 
 func _on_disconnect_button_up() -> void:
-	Client.disconnect_from_server()
+	multiplayer.multiplayer_peer.close()
 
 
 func _on_quit_button_up() -> void:

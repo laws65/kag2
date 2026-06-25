@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="GamemodeInfo" format=3 uid="uid://d3xspumo1yyk5"]
+
+[ext_resource type="Script" uid="uid://cjqke7vyxctaf" path="res://addons/cwispy_2/classes/data/gamemode_info_template.gd" id="1_ery6k"]
+[ext_resource type="Script" uid="uid://dduiy1kia8s64" path="res://src/common/gamemodes/ffa/ffa.gd" id="2_i0exr"]
+
+[resource]
+script = ExtResource("1_ery6k")
+gamemode_name = "FFA"
+scripts = Array[Script]([ExtResource("2_i0exr")])

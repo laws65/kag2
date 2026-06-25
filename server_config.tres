@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="ServerConfig" format=3 uid="uid://c2f706675ifyu"]
+
+[ext_resource type="Script" uid="uid://6tomeip3e05q" path="res://addons/cwispy_2/classes/data/server_config.gd" id="1_q8oa2"]
+
+[resource]
+script = ExtResource("1_q8oa2")
+gamemode_path = "uid://d3xspumo1yyk5"
+metadata/_custom_type_script = "uid://6tomeip3e05q"

@@ -29,14 +29,17 @@ theme_override_constants/separation = 6
 [node name="Unpause" type="Button" parent="VBoxContainer" unique_id=1732931437]
 custom_minimum_size = Vector2(150, 30)
 layout_mode = 2
+text = "Return"
 
 [node name="Disconnect" type="Button" parent="VBoxContainer" unique_id=1691385678]
 custom_minimum_size = Vector2(150, 30)
 layout_mode = 2
+text = "Disconnect"
 
 [node name="Quit" type="Button" parent="VBoxContainer" unique_id=1245030468]
 custom_minimum_size = Vector2(150, 30)
 layout_mode = 2
+text = "Quit to Desktop"
 
 [connection signal="button_up" from="VBoxContainer/Unpause" to="." method="_on_unpause_button_up"]
 [connection signal="button_up" from="VBoxContainer/Disconnect" to="." method="_on_disconnect_button_up"]

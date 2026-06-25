@@ -26,6 +26,8 @@ SyncManager="*uid://bhc3elhd6wkhe"
 Blobs="*uid://bedr0nkdq8rsr"
 NetworkedClock="*uid://cu0skdi6djlqk"
 Network="*uid://cs31w1cq4hxk4"
+GamemodeManager="*uid://bqctqoj88r4c7"
+MapManager="*uid://dolp7a0gpfm1h"
 
 [display]
 
