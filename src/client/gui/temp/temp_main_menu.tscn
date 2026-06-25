@@ -53,7 +53,7 @@ offset_left = 316.0
 offset_top = 309.0
 offset_right = 384.5
 offset_bottom = 340.0
-text = "50301"
+text = "50302"
 placeholder_text = "Port"
 
 [node name="CUsername" type="LineEdit" parent="." unique_id=1758497091]
