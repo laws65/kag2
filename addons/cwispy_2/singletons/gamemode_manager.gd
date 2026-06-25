@@ -14,12 +14,15 @@ func cleanup() -> void:
 		script.cleanup()
 		script.queue_free()
 		_scripts_parent.remove_child(script)
+
+	_current_gamemode = null
 	# ALSO DELETE ALL BLOBS AND ALL MAP STUFF AND ERASE SNAPSHOT BUFFER
 
 
 func server_load_gamemode(gamemode_path: String) -> void:
 	assert(multiplayer.is_server(), "Can't call server_load_gamemode in client")
 	Network.rpc_id_safe(0, _load_gamemode, gamemode_path)
+	MapManager.server_load_random_map()
 
 
 @rpc("authority", "reliable", "call_local")
@@ -28,10 +31,10 @@ func _load_gamemode(gamemode_path: String, spawn_data: Dictionary={}) -> void:
 
 	var gamemode: GamemodeInfo = load(gamemode_path)
 
-	var scripts := gamemode.scripts
-	for script in scripts:
+	var script_paths := gamemode.script_paths
+	for path in script_paths:
 		var node := GamemodeScript.new()
-		node.set_script(script)
+		node.set_script(load(path))
 		node.set_spawn_data(spawn_data)
 		_scripts_parent.add_child(node)
 

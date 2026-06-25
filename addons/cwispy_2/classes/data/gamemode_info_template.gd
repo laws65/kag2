@@ -4,6 +4,6 @@ class_name GamemodeInfo
 
 @export var gamemode_name: String = "Default Gamemode"
 
-@export var maps: Array[PackedScene]
+@export_file("*.tscn") var map_paths: Array[String]
 
-@export var scripts: Array[Script]
+@export_file("*.gd") var script_paths: Array[String]

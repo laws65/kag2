@@ -14,6 +14,9 @@ var spawn_time := -1
 
 func _ready() -> void:
 	Players.new_player_joined.connect(_on_Player_joined)
+	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	multiplayer.connection_failed.connect(_on_connection_failed)
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
 
 func _on_Player_joined(player: Player) -> void:
@@ -34,10 +37,6 @@ func join_server(address: String="localhost", port: int=50302) -> void:
 	Network.buffer_incoming_rpcs = true
 
 	multiplayer.set_multiplayer_peer(peer)
-
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
 
 func _handle_join_error(err: Error) -> void:
@@ -92,9 +91,11 @@ func receive_initial_state(initial_state: Dictionary) -> void:
 
 	var gamemode_path: String = initial_state["gamemode_path"]
 	var gamemode_data: Dictionary = initial_state["gamemode_data"]
-	print("%s receiving initial state" % multiplayer.get_unique_id())
 	GamemodeManager._load_gamemode(gamemode_path, gamemode_data)
 
+	var map_path: String = initial_state["map_path"]
+	var map_data: Dictionary = initial_state["map_data"]
+	MapManager._load_map(map_path, map_data)
 
 	Server.client_finished_loading.rpc_id(1)
 

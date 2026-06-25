@@ -4,8 +4,6 @@ extends GamemodeScript
 func _ready() -> void:
 	Players.new_player_joined.connect(_on_Player_joined)
 	Players.player_left.connect(_on_Player_left)
-	print(multiplayer.get_unique_id())
-	RenderingServer.set_default_clear_color(Color.RED)
 
 
 func _on_Player_joined(new_player: Player) -> void:

@@ -9,6 +9,7 @@ var startup_immediately = true
 
 func _ready() -> void:
 	Blobs.set_blobs_parent(get_node("World/Blobs"))
+	MapManager.set_map_parent(get_node("World/MapParent"))
 	Server.client_join_data_validator = custom_client_join_data_validator
 
 	if startup_immediately:
