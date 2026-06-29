@@ -28,6 +28,11 @@ NetworkedClock="*uid://cu0skdi6djlqk"
 Network="*uid://cs31w1cq4hxk4"
 GamemodeManager="*uid://bqctqoj88r4c7"
 MapManager="*uid://dolp7a0gpfm1h"
+Steamworks="*uid://cnodfvffu6ex6"
+
+[debug]
+
+file_logging/enable_file_logging=true
 
 [display]
 
@@ -42,7 +47,10 @@ enabled=PackedStringArray("res://addons/cwispy_2/plugin.cfg")
 [file_customization]
 
 folder_colors={
-"res://addons/godot-rapier2d/": "gray"
+"res://addons/godot-rapier2d/": "gray",
+"res://addons/godotsteam/": "gray",
+"res://addons/godotsteam_server/": "gray",
+"res://addons/icons/": "gray"
 }
 
 [input]
@@ -83,3 +91,18 @@ common/physics_jitter_fix=0.0
 
 textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
+
+[steam]
+
+initialization/app_data/app_type=0
+initialization/app_data/app_id=0
+initialization/app_data/demo_id=0
+initialization/app_data/playtest_id=0
+initialization/app_data/tool_id=0
+initialization/processes/initialize_on_startup=false
+initialization/processes/embed_callbacks=false
+multiplayer_peer/max_channels=4
+
+[steam_server]
+
+initialization/embed_callbacks=false
