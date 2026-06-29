@@ -5,11 +5,7 @@ signal connection_established
 signal joined_server
 signal left_server
 
-var has_joined_server: bool = false
-
 var custom_join_data: Dictionary = {"username": "hello"}
-
-var spawn_time := -1
 
 
 func _ready() -> void:
@@ -21,7 +17,6 @@ func _ready() -> void:
 
 func _on_Player_joined(player: Player) -> void:
 	if player.is_my_player():
-		has_joined_server = true
 		NetworkedClock.enable_on_client()
 		joined_server.emit()
 

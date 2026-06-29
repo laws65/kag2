@@ -42,7 +42,9 @@ func _handle_server_error(err: Error) -> void:
 func _on_peer_connected(player_id: int) -> void:
 	print("Peer ", player_id, " has connected")
 	_unregistered_peers[player_id] = UnregisteredPeer.new(player_id)
-	_transmit_initial_state_to(player_id)
+
+	var initial_state: Dictionary = SyncManager.get_complete_world_state()
+	Client.receive_initial_state.rpc_id(player_id, initial_state)
 
 
 func _on_peer_disconnected(player_id: int) -> void:
@@ -51,11 +53,6 @@ func _on_peer_disconnected(player_id: int) -> void:
 	_unregistered_peers.erase(player_id)
 
 	Players.deregister_player.rpc(player_id)
-
-
-func _transmit_initial_state_to(player_id: int) -> void:
-	var initial_state: Dictionary = SyncManager.get_complete_world_state()
-	Client.receive_initial_state.rpc_id(player_id, initial_state)
 
 
 @rpc("any_peer", "reliable")
@@ -76,6 +73,7 @@ func receive_client_join_data(join_data: Dictionary) -> void:
 		_unregistered_peers.erase(player_id)
 		return
 
+	unregistered_peer.join_data_authorised = true
 	if unregistered_peer.is_loaded:
 		_spawn_new_player(player_id)
 
@@ -90,7 +88,7 @@ func client_finished_loading() -> void:
 		print("Client %s is trying to mess us up" % player_id)
 		return
 
-	if client_join_data_validator.call(unregistered_peer.spawn_data):
+	if unregistered_peer.join_data_authorised:
 		_spawn_new_player(player_id)
 
 

@@ -9,9 +9,6 @@ const MAX_LATENCY_ARRAY_SIZE = 9
 const INITIAL_TICKS_PER_SECOND = 60
 
 var latency_msecs: float = 0.0
-var client_clock: float = 0.0
-var decimal_collector: float = 0.0
-
 var latency_array: Array[float]
 
 var time_ticks: int = 0
@@ -59,10 +56,8 @@ func enable_on_server() -> void:
 
 func shutdown_on_client() -> void:
 	set_process(false)
-	latency_msecs = 0.0
-	client_clock = 0.0
-	decimal_collector = 0.0
 
+	latency_msecs = 0.0
 	latency_array.clear()
 
 	time_ticks = 0
