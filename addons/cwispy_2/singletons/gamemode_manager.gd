@@ -43,12 +43,26 @@ func _load_gamemode(gamemode_path: String, spawn_data: Dictionary={}) -> void:
 	gamemode_switch.emit(old_gamemode, _current_gamemode)
 
 
-func get_gamemode_data() -> Dictionary:
+func _get_gamemode_data() -> Dictionary:
 	var out: Dictionary
 	var script_nodes := _scripts_parent.get_children()
 	for script: GamemodeScript in script_nodes:
 		script.pass_spawn_data_into_dict(out)
 	return out
+
+
+func get_complete_state_serialised() -> Array:
+	var gamemode_path := _current_gamemode.resource_path
+	var gamemode_data: Dictionary
+	var script_nodes := _scripts_parent.get_children()
+	for script: GamemodeScript in script_nodes:
+		script.pass_spawn_data_into_dict(gamemode_data)
+
+	return [gamemode_path, gamemode_data]
+
+
+func deserialise_complete_state(state: Array) -> void:
+	_load_gamemode(state[0], state[1])
 
 
 #region HELPER FUNCS

@@ -17,7 +17,3 @@ func _on_Player_left(player: Player) -> void:
 	if multiplayer.is_server() and player.has_blob():
 		var player_blob := player.get_blob()
 		player_blob.server_die()
-
-
-func _on_tick() -> void:
-	pass

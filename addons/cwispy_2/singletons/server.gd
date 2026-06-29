@@ -54,36 +54,7 @@ func _on_peer_disconnected(player_id: int) -> void:
 
 
 func _transmit_initial_state_to(player_id: int) -> void:
-	var serialised_players: Array[PackedByteArray]
-
-	var players := Players.get_players()
-	for player in players:
-		serialised_players.push_back(player.serialise())
-
-	var blob_data: Array[Dictionary]
-	var blobs := Blobs.get_blobs()
-	for blob in blobs:
-		blob_data.push_back({
-			"filepath": blob.scene_file_path,
-			"spawn_data": blob.get_spawn_data()
-		})
-
-	var gamemode_path := GamemodeManager.get_current_gamemode().resource_path
-	var gamemode_data := GamemodeManager.get_gamemode_data()
-
-	var map_path := MapManager.get_current_map().scene_file_path
-	var map_data := MapManager.get_current_map().get_spawn_data()
-
-	var initial_state := {
-		"players": serialised_players,
-		"blobs": blob_data,
-		"time_ticks": NetworkedClock.time_ticks,
-		"gamemode_path": gamemode_path,
-		"gamemode_data": gamemode_data,
-		"map_path": map_path,
-		"map_data": map_data,
-	}
-
+	var initial_state: Dictionary = SyncManager.get_complete_world_state()
 	Client.receive_initial_state.rpc_id(player_id, initial_state)
 
 

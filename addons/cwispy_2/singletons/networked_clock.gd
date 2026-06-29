@@ -207,6 +207,15 @@ func _receive_initial_time_and_latency(
 	latest_server_engine_time_msecs = server_engine_time_msecs
 
 
+func get_complete_state_serialised() -> int:
+	return time_ticks
+
+
+func deserialise_complete_state(time: int) -> void:
+	time_ticks = time
+	Network.cull_buffer_before_time_ticks = time
+
+
 #region HELPER FUNCS
 func msecs_to_ticks(time_msecs: float) -> int:
 	return ceili(time_msecs / tick_duration_msecs)

@@ -75,28 +75,7 @@ func receive_server_kick(reason: String) -> void:
 
 @rpc("authority", "reliable")
 func receive_initial_state(initial_state: Dictionary) -> void:
-	var serialised_players: Array[PackedByteArray] = initial_state["players"]
-	for serialised_player in serialised_players:
-		var deserialised_player := Player.deserialise(serialised_player)
-		Players.add_old_player(deserialised_player)
-
-	var blobs: Array[Dictionary] = initial_state["blobs"]
-	for blob in blobs:
-		var filepath: String = blob["filepath"]
-		var spawn_data: Dictionary = blob["spawn_data"]
-		Blobs._create_blob(filepath, spawn_data)
-
-	spawn_time = initial_state["time_ticks"]
-	Network.cull_buffer_before_time_ticks = initial_state["time_ticks"] # reject rpcs sent before world state
-
-	var gamemode_path: String = initial_state["gamemode_path"]
-	var gamemode_data: Dictionary = initial_state["gamemode_data"]
-	GamemodeManager._load_gamemode(gamemode_path, gamemode_data)
-
-	var map_path: String = initial_state["map_path"]
-	var map_data: Dictionary = initial_state["map_data"]
-	MapManager._load_map(map_path, map_data)
-
+	SyncManager.set_complete_world_state(initial_state)
 	Server.client_finished_loading.rpc_id(1)
 
 

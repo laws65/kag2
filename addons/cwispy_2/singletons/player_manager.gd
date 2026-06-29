@@ -36,14 +36,20 @@ func reset() -> void:
 		_players_parent.remove_child(player)
 
 
-func pass_initial_spawn_data_into_dict(out: Dictionary) -> void:
+func get_complete_state_serialised() -> Array[PackedByteArray]:
 	var serialised_players: Array[PackedByteArray]
 
 	var players := get_players()
 	for player in players:
 		serialised_players.push_back(player.serialise())
 
-	out["players"] = serialised_players
+	return serialised_players
+
+
+func deserialise_complete_state(serialised_players: Array[PackedByteArray]) -> void:
+	for serialised_player in serialised_players:
+		var deserialised_player := Player.deserialise(serialised_player)
+		add_old_player(deserialised_player)
 
 
 #region HELPER FUNCS

@@ -33,6 +33,17 @@ func _load_map(map_path: String, map_data: Dictionary={}) -> void:
 	_map_parent.add_child(map_instance)
 
 
+func get_complete_state_serialised() -> Array:
+	var map_path := _current_map.scene_file_path
+	var map_data := _current_map.get_spawn_data()
+
+	return [map_path, map_data]
+
+
+func deserialise_complete_state(state: Array) -> void:
+	_load_map(state[0], state[1])
+
+
 #region HELPER FUNCS
 func get_current_map() -> Map:
 	return _current_map

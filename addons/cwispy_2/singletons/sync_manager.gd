@@ -5,9 +5,25 @@ var snapshot_buffer := []
 var _interpolation_buffer_min_size_ticks := 0
 
 
+var _complete_world_state_providers: Array[Array] # [[node, node_name], [node, node_name]]
+
+
 func _ready() -> void:
 	NetworkedClock.pretick.connect(_on_pre_tick)
 	NetworkedClock.posttick.connect(_on_post_tick)
+
+	register_complete_world_state_provider(Players, &"Players")
+	register_complete_world_state_provider(Blobs, &"Blobs")
+	register_complete_world_state_provider(GamemodeManager, &"Gamemode")
+	register_complete_world_state_provider(MapManager, &"Map")
+	register_complete_world_state_provider(NetworkedClock, &"Clock")
+
+
+func register_complete_world_state_provider(node: Node, node_name: StringName) -> void:
+	assert(node.has_method("get_complete_state_serialised"))
+	assert(node.has_method("deserialise_complete_state"))
+
+	_complete_world_state_providers.push_back([node, node_name])
 
 
 func _on_pre_tick() -> void:
@@ -97,3 +113,21 @@ func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapsho
 		future_snapshot["snapshots"][blob_id]["position"],
 		interpolation_delta
 	)
+
+
+func get_complete_world_state() -> Dictionary:
+	var out: Dictionary
+
+	for provider in _complete_world_state_providers:
+		var node: Node = provider[0]
+		var node_name: StringName = provider[1]
+		out[node_name] = node.get_complete_state_serialised()
+
+	return out
+
+
+func set_complete_world_state(world_state: Dictionary) -> void:
+	for provider in _complete_world_state_providers:
+		var node: Node = provider[0]
+		var node_name: StringName = provider[1]
+		node.deserialise_complete_state(world_state[node_name])
