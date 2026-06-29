@@ -5,7 +5,7 @@ signal connection_established
 signal joined_server
 signal left_server
 
-var custom_join_data: Dictionary = {"username": "hello"}
+var custom_join_data: Dictionary
 
 
 func _ready() -> void:
