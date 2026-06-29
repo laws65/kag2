@@ -3,7 +3,7 @@ extends Node
 
 signal server_started
 
-var _unregistered_peers: Array[UnregisteredPeer]
+var _unregistered_peers: Dictionary[int, UnregisteredPeer]
 
 var client_join_data_validator: Callable = func(join_data: Dictionary): return true
 
@@ -41,14 +41,14 @@ func _handle_server_error(err: Error) -> void:
 
 func _on_peer_connected(player_id: int) -> void:
 	print("Peer ", player_id, " has connected")
-	_unregistered_peers.push_back(UnregisteredPeer.new(player_id))
+	_unregistered_peers[player_id] = UnregisteredPeer.new(player_id)
 	_transmit_initial_state_to(player_id)
 
 
 func _on_peer_disconnected(player_id: int) -> void:
 	print("Peer ", player_id, " has disconnected")
 
-	UnregisteredPeer.erase_peer(player_id, _unregistered_peers)
+	_unregistered_peers.erase(player_id)
 
 	Players.deregister_player.rpc(player_id)
 
@@ -61,7 +61,7 @@ func _transmit_initial_state_to(player_id: int) -> void:
 @rpc("any_peer", "reliable")
 func receive_client_join_data(join_data: Dictionary) -> void:
 	var player_id := multiplayer.get_remote_sender_id()
-	var unregistered_peer := UnregisteredPeer.get_peer(player_id, _unregistered_peers)
+	var unregistered_peer := _unregistered_peers[player_id]
 
 	if not is_instance_valid(unregistered_peer):
 		print("Client %s is trying to mess us up" % player_id)
@@ -73,7 +73,7 @@ func receive_client_join_data(join_data: Dictionary) -> void:
 		print("Player data is invalid! Closing connection")
 		kick_player(player_id, "Invalid join data")
 
-		UnregisteredPeer.erase_peer(player_id, _unregistered_peers)
+		_unregistered_peers.erase(player_id)
 		return
 
 	if unregistered_peer.is_loaded:
@@ -83,7 +83,7 @@ func receive_client_join_data(join_data: Dictionary) -> void:
 @rpc("any_peer", "reliable")
 func client_finished_loading() -> void:
 	var player_id := multiplayer.get_remote_sender_id()
-	var unregistered_peer := UnregisteredPeer.get_peer(player_id, _unregistered_peers)
+	var unregistered_peer := _unregistered_peers[player_id]
 	if is_instance_valid(unregistered_peer):
 		unregistered_peer.is_loaded = true
 	else:
@@ -104,13 +104,13 @@ func kick_player(player_id: int, reason: String) -> void:
 
 
 func _spawn_new_player(player_id: int) -> void:
-	var join_data := UnregisteredPeer.get_peer(player_id, _unregistered_peers).spawn_data
+	var join_data := _unregistered_peers[player_id].spawn_data
 
 	Client.prepare_to_spawn_in.rpc_id(player_id, NetworkedClock.time_ticks)
 
 	Network.rpc_id_safe(0, Players.register_player, player_id, join_data)
 
-	UnregisteredPeer.erase_peer(player_id, _unregistered_peers)
+	_unregistered_peers.erase(player_id)
 
 
 func _load_server_config() -> void:

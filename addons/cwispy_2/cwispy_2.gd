@@ -12,7 +12,6 @@ const autoloads := {
 	"Network": "network.gd",
 	"GamemodeManager": "gamemode_manager.gd",
 	"MapManager": "map_manager.gd",
-	"Steamworks": "steamworks.gd",
 }
 
 
