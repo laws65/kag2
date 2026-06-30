@@ -6,12 +6,14 @@ signal connection_requested(peer_id: int, join_data: Dictionary)
 
 var _client_join_data: Dictionary[int, Dictionary]
 
-var config: ServerConfig
+var config: ServerConfig:
+	get:
+		if not config:
+			_load_server_config()
+		return config
 
 
 func start_server() -> void:
-	_load_server_config()
-
 	var peer := ENetMultiplayerPeer.new()
 
 	var err := peer.create_server(config.sv_port)

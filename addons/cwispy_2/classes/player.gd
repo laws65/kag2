@@ -3,6 +3,7 @@ class_name Player
 
 
 var props: Dictionary
+static var secret_members: Array[String]
 
 var _blob_id := -1
 
@@ -17,10 +18,11 @@ func get_id() -> int:
 
 ## TODO: props aren't properly serialised
 func serialise() -> PackedByteArray:
-	var dict_to_serialise = props
+	var dict_to_serialise = props.duplicate()
+	for secret_member in secret_members:
+		dict_to_serialise.erase(secret_member)
 	dict_to_serialise["id"] = get_id()
 	var serialised := Common.serialise_dictionary(dict_to_serialise)
-	var unserialised := Common.deserialise_dictionary(serialised)
 	return serialised
 
 
