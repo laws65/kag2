@@ -4,8 +4,13 @@ class_name ServerConfig
 
 @export var sv_name: String = "Unnamed Server"
 @export var sv_description: String = ""
+@export var sv_password: String = ""
 
 @export var sv_port: int = 50302
+
+@export var max_players: int = 32
+
+@export var display_in_server_browser: bool = true
 
 @export_file("*.tres") var gamemode_path: String
 

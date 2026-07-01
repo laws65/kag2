@@ -30,6 +30,8 @@ func _load_map(map_path: String, map_data: Dictionary={}) -> void:
 
 	map_instance.set_spawn_data(map_data)
 	_current_map = map_instance
+	var map_name := map_path.get_file().get_basename()
+	map_instance.name = map_name
 	_map_parent.add_child(map_instance)
 
 

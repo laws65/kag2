@@ -1,17 +1,9 @@
-extends Node
+extends RefCounted
+class_name SteamAuth
 
 
 const STEAM_AUTH_TICKET = &"steam_auth_ticket"
 const STEAM_ID = &"steam_id"
-
-enum {
-	MODE_DISABLED,
-	MODE_CONNECTING_SERVER,
-	MODE_ENABLED_SERVER,
-	MODE_ENABLED_CLIENT,
-}
-
-var _mode = MODE_DISABLED
 
 # server only
 var _pending_auth: Dictionary[int, int]
@@ -20,54 +12,20 @@ var _pending_auth: Dictionary[int, int]
 var _client_auth_ticket_id: int
 
 
-func _ready() -> void:
+func _init() -> void:
 	Player.secret_members.push_back(STEAM_AUTH_TICKET)
 
-	Server.pre_start_server.connect(initialise_on_server) # assumes that pre start server is only ever emitted once
 	Server.custom_client_authenticator = begin_new_player_authentication
 	SteamServer.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
-	SteamServer.server_connected.connect(_on_server_connected_to_steam)
-	Players.player_left.connect(_on_Player_left)
+	Players.player_left.connect(_end_client_auth_session)
 
-	Client.pre_join_server.connect(_on_pre_join_server)
+	Client.pre_join_server.connect(_generate_auth_ticket)
 	Client.left_server.connect(_client_cancel_auth_ticket)
 
 
-func _process(_delta: float) -> void:
-	if _mode == MODE_ENABLED_SERVER or _mode == MODE_CONNECTING_SERVER:
-		SteamServer.run_callbacks()
-	elif _mode == MODE_ENABLED_CLIENT:
-		Steam.run_callbacks()
-
-
-#region SERVER FUNCS
-func initialise_on_server() -> void:
-	var initialise_response := SteamServer.serverInitEx(
-		"0.0.0.0",
-		Server.config.sv_port,
-		Server.config.sv_port + 1,
-		SteamServer.SERVER_MODE_AUTHENTICATION,
-		"0.1.0"
-	)
-
-	var error_code: int = initialise_response["status"]
-	var error_message: String = initialise_response["verbal"]
-
-	if error_code != SteamServer.SteamAPIInitResult.STEAM_API_INIT_RESULT_OK:
-		print(error_message)
-		return
-
-	SteamServer.logOnAnonymous()
-	_mode = MODE_CONNECTING_SERVER
-
-
-func _on_server_connected_to_steam() -> void:
-	_mode = MODE_ENABLED_SERVER
-	print("Server has connected to steam")
-
 
 func begin_new_player_authentication(player_id: int, join_data: Dictionary) -> void:
-	if _mode == MODE_CONNECTING_SERVER:
+	if Steamworks.mode == Steamworks.MODE_CONNECTING_SERVER:
 		await SteamServer.server_connected
 
 	if not join_data.has(STEAM_AUTH_TICKET):
@@ -103,38 +61,15 @@ func _on_validate_auth_ticket_response(steam_id: int, response_id: int, _ticket_
 		Server.accept_connection_request(player_id)
 
 
-func _on_Player_left(player: Player) -> void:
-	if _mode == MODE_ENABLED_SERVER or _mode == MODE_CONNECTING_SERVER:
-		end_client_auth_session(player)
-
-
-func end_client_auth_session(player: Player) -> void:
-	var steam_id: int = player.get_prop(STEAM_ID)
-	SteamServer.endAuthSession(steam_id)
+func _end_client_auth_session(player: Player) -> void:
+	if Steamworks.mode == Steamworks.MODE_ENABLED_SERVER or Steamworks.mode == Steamworks.MODE_CONNECTING_SERVER:
+		var steam_id: int = player.get_prop(STEAM_ID)
+		SteamServer.endAuthSession(steam_id)
 #endregion
 
 
 #region CLIENT FUNCS
-func _on_pre_join_server() -> void:
-	if _mode != MODE_ENABLED_CLIENT:
-		initialise_on_client()
-
-	generate_auth_ticket()
-
-
-func initialise_on_client() -> void:
-	var initialise_response := Steam.steamInitEx()
-
-	if initialise_response["status"] > Steam.STEAM_API_INIT_RESULT_OK:
-		print("Failed to initialize Steam, shutting down: %s" % initialise_response)
-		get_tree().quit()
-
-	Client.custom_join_data[STEAM_ID] = Steam.getSteamID()
-
-	_mode = MODE_ENABLED_CLIENT
-
-
-func generate_auth_ticket() -> void:
+func _generate_auth_ticket() -> void:
 	var auth_ticket: Dictionary = Steam.getAuthSessionTicket()
 	Client.custom_join_data[STEAM_AUTH_TICKET] = auth_ticket
 	_client_auth_ticket_id = auth_ticket.id
