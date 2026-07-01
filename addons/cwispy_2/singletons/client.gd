@@ -1,6 +1,7 @@
 extends Node
 
 
+signal pre_join_server
 signal connection_established
 signal joined_server
 signal left_server
@@ -22,6 +23,7 @@ func _on_Player_joined(player: Player) -> void:
 
 
 func join_server(address: String="localhost", port: int=50302) -> void:
+	pre_join_server.emit()
 	var peer := ENetMultiplayerPeer.new()
 
 	var err := peer.create_client(address, port)

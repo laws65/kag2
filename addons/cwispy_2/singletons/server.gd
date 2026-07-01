@@ -3,17 +3,21 @@ extends Node
 
 signal server_started
 signal connection_requested(peer_id: int, join_data: Dictionary)
+signal pre_start_server
+
+var custom_client_authenticator: Callable
 
 var _client_join_data: Dictionary[int, Dictionary]
 
 var config: ServerConfig:
 	get:
 		if not config:
-			_load_server_config()
+			config = ServerConfig.load_config()
 		return config
 
 
 func start_server() -> void:
+	pre_start_server.emit()
 	var peer := ENetMultiplayerPeer.new()
 
 	var err := peer.create_server(config.sv_port)
@@ -27,7 +31,6 @@ func start_server() -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
 	GamemodeManager.server_load_gamemode(config.gamemode_path)
-
 	NetworkedClock.enable_on_server()
 
 	server_started.emit()
@@ -47,9 +50,7 @@ func _on_peer_connected(player_id: int) -> void:
 
 func _on_peer_disconnected(player_id: int) -> void:
 	print("Peer ", player_id, " has disconnected")
-
 	_client_join_data.erase(player_id)
-
 	Players.deregister_player.rpc(player_id)
 
 
@@ -62,7 +63,11 @@ func receive_client_join_data(join_data: Dictionary) -> void:
 		return
 
 	_client_join_data[player_id] = join_data
-	connection_requested.emit(player_id, join_data)
+
+	if custom_client_authenticator.is_valid():
+		custom_client_authenticator.call(player_id, join_data)
+	else:
+		accept_connection_request(player_id)
 
 
 func accept_connection_request(player_id: int) -> void:
@@ -97,15 +102,6 @@ func kick_player(player_id: int, reason: String) -> void:
 
 func _spawn_new_player(player_id: int) -> void:
 	var join_data := _client_join_data[player_id]
-
 	Client.prepare_to_spawn_in.rpc_id(player_id, NetworkedClock.time_ticks)
-
 	Network.rpc_id_safe(0, Players.register_player, player_id, join_data)
-
 	_client_join_data.erase(player_id)
-
-
-func _load_server_config() -> void:
-	var config_path := "res://server_config.tres"
-	var new_config: ServerConfig = load(config_path) # TODO add error checking, add custom cfg in user:// maybe
-	config = new_config
