@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://dk45qmidln5q1"]
+
+[ext_resource type="Script" uid="uid://bp2ws0qjua3yg" path="res://src/client/gui/server_browser/server_browser.gd" id="1_5j6cn"]
+
+[node name="ServerBrowser" type="Control" unique_id=731729170]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5j6cn")
+
+[node name="RefreshServerList" type="Button" parent="." unique_id=845665484]
+layout_mode = 0
+offset_left = 655.0
+offset_top = 101.0
+offset_right = 791.0
+offset_bottom = 132.0
+text = "Refresh Browser"
+
+[node name="LoadingLabel" type="Label" parent="." unique_id=321739106]
+visible = false
+layout_mode = 0
+offset_left = 662.0
+offset_top = 62.0
+offset_right = 702.0
+offset_bottom = 85.0
+text = "Loading..."
+
+[connection signal="button_up" from="RefreshServerList" to="." method="_on_refresh_server_list_button_up"]

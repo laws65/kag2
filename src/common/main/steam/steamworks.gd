@@ -5,7 +5,7 @@ const STEAM_ENABLED = true
 
 const STEAM_AUTH_TICKET = &"steam_auth_ticket"
 const STEAM_ID = &"steam_id"
-const PRODUCT_NAME = &"KAG2-TEST"
+const MOD_DIR = "kag2"
 
 enum {
 	MODE_DISABLED,
@@ -17,6 +17,7 @@ enum {
 var mode = MODE_DISABLED
 
 var auth: SteamAuth
+var server_browser: SteamServerBrowser
 
 
 func _ready() -> void:
@@ -29,6 +30,7 @@ func _ready() -> void:
 	Client.pre_join_server.connect(_initialise_on_client)
 
 	auth = SteamAuth.new()
+	server_browser = SteamServerBrowser.new()
 
 
 func _process(_delta: float) -> void:
@@ -54,36 +56,28 @@ func _initialise_on_server() -> void:
 		print(error_message)
 		return
 
-	SteamServer.setProduct(PRODUCT_NAME)
+	var product_name := str(SteamServer.getAppID())
+	SteamServer.setProduct(product_name)
+	SteamServer.setModDir(MOD_DIR)
 	SteamServer.logOnAnonymous()
 
 	mode = MODE_CONNECTING_SERVER
 
 
 func _initialise_on_client() -> void:
-
 	if mode == MODE_ENABLED_CLIENT:
 		return
-	var initialise_response := Steam.steamInitEx()
 
+	var initialise_response := Steam.steamInitEx()
 	if initialise_response["status"] > Steam.STEAM_API_INIT_RESULT_OK:
 		print("Failed to initialize Steam, shutting down: %s" % initialise_response)
 		get_tree().quit()
 
 	Client.custom_join_data[STEAM_ID] = Steam.getSteamID()
-
+	print("Steam has been initialised on client")
 	mode = MODE_ENABLED_CLIENT
 
 
 func _on_server_connected_to_steam() -> void:
 	mode = MODE_ENABLED_SERVER
 	print("Server has connected to steam")
-
-	SteamServer.setServerName(Server.config.sv_name)
-	SteamServer.setMapName(MapManager.get_current_map().name)
-	SteamServer.setMaxPlayerCount(Server.config.max_players)
-	SteamServer.setPasswordProtected(Server.config.sv_password == "")
-	SteamServer.setDedicatedServer(true)
-
-	if Server.config.display_in_server_browser:
-		SteamServer.setAdvertiseServerActive(true)
