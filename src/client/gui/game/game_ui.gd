@@ -5,6 +5,7 @@ func _ready() -> void:
 	Server.server_started.connect(func():
 		%Whoami.text = "You are server")
 	Client.connection_established.connect(func():
+		show()
 		%Whoami.text = "You are %s" % multiplayer.get_unique_id())
 	Players.new_player_joined.connect(_on_Player_joined)
 	Players.player_left.connect(_on_Player_left)
@@ -16,6 +17,7 @@ func _ready() -> void:
 		func (_blob: Blob):
 			_rebuild_blob_list()
 	)
+	Client.left_server.connect(_on_left_server)
 
 
 func _rebuild_blob_list() -> void:
@@ -42,3 +44,7 @@ func _rebuild_player_list() -> void:
 
 func _on_fps_timer_timeout() -> void:
 	%FPS.text = "FPS: %s" % int(Engine.get_frames_per_second())
+
+
+func _on_left_server() -> void:
+	hide()

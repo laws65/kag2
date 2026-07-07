@@ -4,6 +4,7 @@ extends Control
 func _ready() -> void:
 	Server.server_started.connect(func(): hide())
 	Client.connection_established.connect(func(): hide())
+	Client.left_server.connect(func(): show())
 
 
 func _on_c_button_button_up() -> void:

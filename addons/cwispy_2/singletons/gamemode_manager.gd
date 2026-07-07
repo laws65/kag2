@@ -16,7 +16,6 @@ func cleanup() -> void:
 		_scripts_parent.remove_child(script)
 
 	_current_gamemode = null
-	# ALSO DELETE ALL BLOBS AND ALL MAP STUFF AND ERASE SNAPSHOT BUFFER
 
 
 func server_load_gamemode(gamemode_path: String) -> void:

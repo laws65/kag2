@@ -15,3 +15,8 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
+# Libraries
+addons/godot-rapier2d/bin/~libgodot_rapier.windows.x86_64-pc-windows-msvc.dll
+addons/godotsteam/win64/~libgodotsteam.windows.template_debug.x86_64.dll
+addons/godotsteam_server/win64/~libgodotsteam_server.windows.template_debug.x86_64.dll

@@ -56,12 +56,16 @@ func _on_connection_failed() -> void:
 
 func _on_server_disconnected() -> void:
 	print("Server disconnected")
-	left_server.emit()
+
 	NetworkedClock.shutdown_on_client()
 	Network.reset()
 	Blobs.reset()
 	Players.reset()
 	SyncManager.reset()
+	MapManager.cleanup()
+	GamemodeManager.cleanup()
+
+	left_server.emit()
 
 
 @rpc("authority", "reliable")

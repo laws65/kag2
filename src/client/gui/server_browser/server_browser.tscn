@@ -28,4 +28,32 @@ offset_right = 702.0
 offset_bottom = 85.0
 text = "Loading..."
 
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1009419229]
+custom_minimum_size = Vector2(400, 500)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=515177301]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HideEmpty" type="CheckBox" parent="VBoxContainer" unique_id=1190968121]
+layout_mode = 2
+text = "Hide Empty"
+
+[node name="HideFull" type="CheckBox" parent="VBoxContainer" unique_id=419471768]
+layout_mode = 2
+text = "Hide Full"
+
 [connection signal="button_up" from="RefreshServerList" to="." method="_on_refresh_server_list_button_up"]

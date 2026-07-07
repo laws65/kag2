@@ -12,6 +12,7 @@ func _on_unpause_button_up() -> void:
 
 func _on_disconnect_button_up() -> void:
 	multiplayer.multiplayer_peer.close()
+	hide()
 
 
 func _on_quit_button_up() -> void:

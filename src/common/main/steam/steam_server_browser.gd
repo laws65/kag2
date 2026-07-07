@@ -26,6 +26,7 @@ func _register_server_on_server_browser() -> void:
 
 
 func request_server_list(filters: Array) -> int:
+	_verify_filters_are_valid(filters)
 	# https://partner.steamgames.com/doc/api/ISteamMatchmakingServers#MatchMakingKeyValuePair_t
 	var old_request_id := Steam.get_server_list_request()
 	Steam.cancelQuery(old_request_id)
@@ -37,7 +38,6 @@ func request_server_list(filters: Array) -> int:
 	return request_id
 
 
-# TODO figure out what the response is for this in terms of enum values
 func _on_server_list_request_refresh_complete(request_id: int, response: int) -> void:
 	print("Request complete with handle %s and id %s" % [request_id, response])
 	query_finished.emit(response)
@@ -61,3 +61,10 @@ func _on_server_list_request_server_responded(request_id: int, server_index: int
 	print("Request responded with handle %s and id %s" % [request_id, server_index])
 	var server_details: Dictionary = Steam.getServerDetails(server_index, request_id)
 	query_response.emit(server_details)
+
+
+func _verify_filters_are_valid(filters: Array) -> void:
+	for filter in filters:
+		assert(filter.size() == 2)
+		assert(filter[0] is String)
+		assert(filter[1] is String)

@@ -1,8 +1,6 @@
 extends Control
 
 
-var current_request_id: int
-
 
 func _ready() -> void:
 	Steamworks._initialise_on_client()
@@ -12,9 +10,9 @@ func _ready() -> void:
 
 func _on_refresh_server_list_button_up() -> void:
 	var filters = [
-		{"key":"or", "value":"2"},
-		{"key":"map", "value":"kag2_test"},
-		{"key":"gametagsand", "value":"ctf"}
+		["or", "2"],
+		["map", "kag2-test"],
+		["gametagsand", "ctf"],
 	]
 	Steamworks.server_browser.request_server_list(filters)
 	$LoadingLabel.show()
