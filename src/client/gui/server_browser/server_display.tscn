@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://dr0f2suamxg1o"]
+
+[ext_resource type="Script" uid="uid://bagikcubjtlyq" path="res://src/client/gui/server_browser/server_display.gd" id="1_hip4m"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hip4m"]
+bg_color = Color(0.78611207, 0.19797117, 0.20721531, 1)
+
+[sub_resource type="Theme" id="Theme_yam1h"]
+Button/styles/pressed = SubResource("StyleBoxFlat_hip4m")
+
+[node name="ServerDisplay" type="HBoxContainer" unique_id=1743028951]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -304.0
+offset_bottom = -617.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+script = ExtResource("1_hip4m")
+
+[node name="Favourite" type="Button" parent="." unique_id=1990544260]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+theme = SubResource("Theme_yam1h")
+toggle_mode = true
+text = "<3"
+
+[node name="ServerName" type="Label" parent="." unique_id=1667242003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "KAG2 Official FFA AUS"
+
+[node name="MapName" type="Label" parent="." unique_id=1476701684]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ffa_whateva"
+horizontal_alignment = 2
+
+[node name="PlayerCount" type="Label" parent="." unique_id=269788170]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0/32"
+horizontal_alignment = 2
+
+[node name="Ping" type="Label" parent="." unique_id=476392321]
+unique_name_in_owner = true
+layout_mode = 2
+text = "30ms"
+horizontal_alignment = 2
+
+[connection signal="toggled" from="Favourite" to="." method="_on_favourite_toggled"]
