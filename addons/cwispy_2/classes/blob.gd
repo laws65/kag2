@@ -112,6 +112,9 @@ func get_snapshot() -> Dictionary:
 	return snapshot
 
 
+const MAX_VELOCITY_CORRECTION := 3
+
+
 func set_snapshop(snapshot: Dictionary) -> void:
 	for prop in snapshot.keys():
 		if prop == "position":
@@ -121,11 +124,13 @@ func set_snapshop(snapshot: Dictionary) -> void:
 				Transform2D.IDENTITY.translated(snapshot["position"])
 			)
 		elif prop == "linear_velocity":
-			PhysicsServer2D.body_set_state(
-				get_rid(),
-				PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY,
-				snapshot["linear_velocity"]
-			)
+			var new_velocity: Vector2 = snapshot["linear_velocity"]
+			if linear_velocity.distance_squared_to(new_velocity) > pow(MAX_VELOCITY_CORRECTION, 2):
+				PhysicsServer2D.body_set_state(
+					get_rid(),
+					PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY,
+					snapshot["linear_velocity"]
+				)
 		else:
 			set(prop, snapshot[prop])
 
