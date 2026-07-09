@@ -5,6 +5,11 @@ var target: SteamServerBrowser.Target = SteamServerBrowser.Target.INTERNET
 
 
 func _ready() -> void:
+	if not Steamworks.STEAM_ENABLED:
+		queue_free()
+		await get_tree().physics_frame
+		get_parent().remove_child(self)
+		return
 	Steamworks.server_browser.query_response.connect(_on_query_response)
 	Steamworks.server_browser.query_finished.connect(_on_query_finished)
 	if not get_tree().root.has_node("Main"):

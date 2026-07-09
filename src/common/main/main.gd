@@ -14,8 +14,7 @@ func _ready() -> void:
 		Server.start_server()
 	elif startup_immediately and "--client" in args:
 		Client.join_server()
-	else:
-		Steamworks._initialise_on_client()
+
 
 	if not Server.custom_client_authenticator.is_valid():
 		Server.custom_client_authenticator = _authorise_new_player

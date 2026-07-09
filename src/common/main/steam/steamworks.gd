@@ -1,7 +1,7 @@
 extends Node
 
 
-const STEAM_ENABLED = true
+const STEAM_ENABLED = false
 
 const STEAM_AUTH_TICKET = &"steam_auth_ticket"
 const STEAM_ID = &"steam_id"
