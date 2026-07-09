@@ -9,12 +9,13 @@ func _ready() -> void:
 	MapManager.set_map_parent(get_node("World/MapParent"))
 	Client.custom_join_data["username"] = "hello"
 	Server.connection_requested.connect(_authorise_new_player)
-	if startup_immediately:
-		var args := OS.get_cmdline_args()
-		if "--server" in args:
-			Server.start_server()
-		elif "--client" in args:
-			Client.join_server()
+	var args := OS.get_cmdline_args()
+	if "--server" in args:
+		Server.start_server()
+	elif startup_immediately and "--client" in args:
+		Client.join_server()
+	else:
+		Steamworks._initialise_on_client()
 
 	if not Server.custom_client_authenticator.is_valid():
 		Server.custom_client_authenticator = _authorise_new_player

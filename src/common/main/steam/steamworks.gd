@@ -59,6 +59,7 @@ func _initialise_on_server() -> void:
 	var product_name := str(SteamServer.getAppID())
 	SteamServer.setProduct(product_name)
 	SteamServer.setModDir(MOD_DIR)
+	SteamServer.setGameDescription("King Arthur's Gold 2")
 	SteamServer.logOnAnonymous()
 
 	mode = MODE_CONNECTING_SERVER

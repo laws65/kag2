@@ -24,6 +24,7 @@ func _init() -> void:
 
 
 func _register_server_on_server_browser() -> void:
+	print("advertising server on server browser")
 	SteamServer.setServerName(Server.config.sv_name)
 	SteamServer.setMapName(MapManager.get_current_map().name)
 	SteamServer.setMaxPlayerCount(Server.config.max_players)

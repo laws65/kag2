@@ -19,3 +19,8 @@ func _on_c_button_button_up() -> void:
 
 func _on_s_button_button_up() -> void:
 	Server.start_server()
+
+
+
+func _on_browser_toggled(toggled_on: bool) -> void:
+	$ServerBrowser.visible = toggled_on

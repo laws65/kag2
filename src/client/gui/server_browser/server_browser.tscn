@@ -79,12 +79,17 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="HideEmpty" type="CheckBox" parent="VBoxContainer" unique_id=1190968121]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Hide Empty"
 
-[node name="HideFull" type="CheckBox" parent="VBoxContainer" unique_id=419471768]
+[node name="ShowFull" type="CheckBox" parent="VBoxContainer" unique_id=419471768]
+unique_name_in_owner = true
 layout_mode = 2
-text = "Hide Full"
+text = "Show Full"
 
+[connection signal="visibility_changed" from="." to="." method="_on_visibility_changed"]
 [connection signal="tab_changed" from="T" to="." method="_set_target"]
-[connection signal="button_up" from="RefreshServerList" to="." method="_on_refresh_server_list_button_up"]
+[connection signal="button_up" from="RefreshServerList" to="." method="_refresh_server_list"]
+[connection signal="button_up" from="VBoxContainer/HideEmpty" to="." method="_refresh_server_list"]
+[connection signal="button_up" from="VBoxContainer/ShowFull" to="." method="_refresh_server_list"]
