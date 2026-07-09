@@ -21,7 +21,6 @@ func _on_s_button_button_up() -> void:
 	Server.start_server()
 
 
-
 func _on_browser_toggled(toggled_on: bool) -> void:
 	if has_node("ServerBrowser"):
 		$ServerBrowser.visible = toggled_on

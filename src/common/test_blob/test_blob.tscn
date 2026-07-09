@@ -5,20 +5,27 @@
 [ext_resource type="Script" uid="uid://cg1n23p2geaqu" path="res://src/client/scripts/player_display_interpolator.gd" id="3_034kl"]
 [ext_resource type="PackedScene" uid="uid://b0t1ywqrl8l1t" path="res://src/client/debug_blob.tscn" id="4_b6fct"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_w8jvj"]
-size = Vector2(25, 25)
+[sub_resource type="CircleShape2D" id="CircleShape2D_b6fct"]
+radius = 12.0
 
-[node name="TestBlob" type="CharacterBody2D" unique_id=62934992]
+[node name="TestBlob" type="RigidBody2D" unique_id=1463369762]
+can_sleep = false
+lock_rotation = true
+freeze_mode = 1
+continuous_cd = 1
 script = ExtResource("1_5gim2")
+props_to_track_per_snapshot = Array[String](["position", "linear_velocity"])
+props_to_spawn_with = Array[String](["_player_id", "position", "linear_velocity"])
 client_controlled = true
 metadata/_custom_type_script = "uid://bk0d7x26sdivv"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1748626683]
-shape = SubResource("RectangleShape2D_w8jvj")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=743564946]
 scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_5gim2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1748626683]
+visible = false
+shape = SubResource("CircleShape2D_b6fct")
 
 [node name="Ghost" type="Sprite2D" parent="." unique_id=908114931]
 visible = false
@@ -41,6 +48,7 @@ nodes_to_interpolate = [NodePath("../Label"), NodePath("../Sprite2D")]
 metadata/_custom_type_script = "uid://cg1n23p2geaqu"
 
 [node name="DebugBlob" parent="." unique_id=1121405018 node_paths=PackedStringArray("blob") instance=ExtResource("4_b6fct")]
+visible = false
 offset_left = -64.0
 offset_top = -13.0
 offset_right = 67.0

@@ -1,5 +1,5 @@
 @icon ("res://addons/icons/human.svg")
-extends CharacterBody2D
+extends RapierRigidBody2D
 class_name Blob
 
 
@@ -60,22 +60,6 @@ func _set_player_id(new_player_id: int, notify_own_player: bool = true) -> void:
 	player_id_changed.emit(old_player_id, new_player_id)
 
 
-func _resolve_collision(collision: KinematicCollision2D) -> void:
-	var colliding_body_instance_id: int = collision.get_collider_id()
-	var colliding_body: Node2D = instance_from_id(colliding_body_instance_id)
-
-	if not colliding_body is Blob:
-		return
-
-	colliding_body = colliding_body as Blob
-	print("player %s colliding with blob %s" % [get_player_id(), colliding_body.get_player_id()])
-
-	if colliding_body.get_player_id() == multiplayer.get_unique_id():
-		var colliding_body_velocity: Vector2 = velocity
-		colliding_body.velocity += colliding_body_velocity
-		#colliding_body.move_and_collide(velocity * get_physics_process_delta_time())
-
-
 func server_die() -> void:
 	assert(multiplayer.is_server(), "Can't kill blob on client")
 	Network.rpc_id_safe(0, _die)
@@ -111,6 +95,12 @@ func set_spawn_data(spawn_data: Dictionary) -> void:
 	for key in spawn_data.keys():
 		if key == "id":
 			set_id(spawn_data[key])
+		elif key == "position":
+			PhysicsServer2D.body_set_state(
+				get_rid(),
+				PhysicsServer2D.BODY_STATE_TRANSFORM,
+				Transform2D.IDENTITY.translated(spawn_data["position"])
+			)
 		else:
 			set(key, spawn_data[key])
 
@@ -124,7 +114,20 @@ func get_snapshot() -> Dictionary:
 
 func set_snapshop(snapshot: Dictionary) -> void:
 	for prop in snapshot.keys():
-		set(prop, snapshot[prop])
+		if prop == "position":
+			PhysicsServer2D.body_set_state(
+				get_rid(),
+				PhysicsServer2D.BODY_STATE_TRANSFORM,
+				Transform2D.IDENTITY.translated(snapshot["position"])
+			)
+		elif prop == "linear_velocity":
+			PhysicsServer2D.body_set_state(
+				get_rid(),
+				PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY,
+				snapshot["linear_velocity"]
+			)
+		else:
+			set(prop, snapshot[prop])
 
 
 func interpolate_snapshot(

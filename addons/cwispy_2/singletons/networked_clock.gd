@@ -19,11 +19,7 @@ var latest_server_time_ticks: int = 0 # client only
 var latest_server_engine_time_msecs: float = 0.0 # client only
 var _should_signal_ticks := false # client only
 
-var ticks_per_second: int:
-	set(value):
-		Engine.set_physics_ticks_per_second(value)
-	get():
-		return Engine.get_physics_ticks_per_second()
+var ticks_per_second: int = INITIAL_TICKS_PER_SECOND
 
 
 var engine_time_msecs: float:
@@ -72,8 +68,6 @@ func shutdown_on_client() -> void:
 func _ready() -> void:
 	set_process(false)
 
-	ticks_per_second = INITIAL_TICKS_PER_SECOND
-
 	var space := get_viewport().world_2d.space
 	PhysicsServer2D.space_set_active(space, false)
 
@@ -99,7 +93,7 @@ func _run_tick() -> void:
 	tick.emit()
 
 	var space := get_viewport().world_2d.space
-	RapierPhysicsServer2D.space_step(space, time_since_last_tick_msecs / 1000.0)
+	RapierPhysicsServer2D.space_step(space, tick_duration_msecs / 1000.0)
 	RapierPhysicsServer2D.space_flush_queries(space)
 
 	posttick.emit()

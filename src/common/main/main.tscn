@@ -15,9 +15,9 @@ script = ExtResource("1_bnsfs")
 
 [node name="World" type="Node2D" parent="." unique_id=1048000910]
 
-[node name="Blobs" type="Node2D" parent="World" unique_id=877208775]
-
 [node name="Camera2D" type="Camera2D" parent="World" unique_id=210476563]
 zoom = Vector2(3, 3)
 
 [node name="MapParent" type="Node2D" parent="World" unique_id=504083362]
+
+[node name="Blobs" type="Node2D" parent="World" unique_id=877208775]
