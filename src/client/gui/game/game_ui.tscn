@@ -56,3 +56,22 @@ offset_bottom = 40.0
 [node name="PauseMenu" parent="." unique_id=1322517163 instance=ExtResource("2_w0t28")]
 visible = false
 layout_mode = 1
+
+[node name="Time" type="Label" parent="." unique_id=1930027083]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1047.0
+offset_top = 25.0
+offset_right = 1087.0
+offset_bottom = 48.0
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 2
+
+[node name="OldTime" type="Label" parent="." unique_id=473029821]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1047.0
+offset_top = 66.0
+offset_right = 1102.0
+offset_bottom = 111.0
+theme_override_font_sizes/font_size = 32

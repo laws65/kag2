@@ -9,6 +9,7 @@
 radius = 12.0
 
 [node name="TestBlob" type="RigidBody2D" unique_id=1463369762]
+gravity_scale = 0.0
 can_sleep = false
 lock_rotation = true
 freeze_mode = 1

@@ -3,73 +3,32 @@ extends Node
 
 signal pretick()
 signal tick()
+signal physics_tick()
 signal posttick()
 
 const MAX_LATENCY_ARRAY_SIZE = 9
 const INITIAL_TICKS_PER_SECOND = 60
 
-var latency_msecs: float = 0.0
-var latency_array: Array[float]
-
 var time_ticks: int = 0
 var time_since_last_tick_msecs := 0.0
-var time_dilation_factor := 1.0
-
-var latest_server_time_ticks: int = 0 # client only
-var latest_server_engine_time_msecs: float = 0.0 # client only
-var _should_signal_ticks := false # client only
-
 var ticks_per_second: int = INITIAL_TICKS_PER_SECOND
 
+var network_time_ticks: int = 0 # the client's best guess of the current server time
 
-var engine_time_msecs: float:
-	get():
-		return Time.get_ticks_usec()/1000.0
+var latency_msecs: float = 0.0 # client only
+var latency_array: Array[float] # client only
 
+var time_dilation_factor := 1.0 # client only
 
-var tick_duration_msecs: float:
-	get():
-		return 1000.0/float(ticks_per_second)
+var latest_server_time_ticks: int = 0 # client only
 
+var _client_should_signal_ticks := false # client only
 
-var interpolation_fraction: float:
-	get():
-		return time_since_last_tick_msecs / tick_duration_msecs
-
-
-func initialise_on_client() -> void:
-	set_process(true)
-	_calculate_initial_time_and_latency()
-
-
-func enable_on_client() -> void:
-	_should_signal_ticks = true
-
-
-func enable_on_server() -> void:
-	set_process(true)
-
-
-func shutdown_on_client() -> void:
-	set_process(false)
-
-	latency_msecs = 0.0
-	latency_array.clear()
-
-	time_ticks = 0
-	time_since_last_tick_msecs = 0.0
-	time_dilation_factor = 1.0
-
-	latest_server_time_ticks = 0
-	latest_server_engine_time_msecs = 0.0
-	_should_signal_ticks = false
-
-
+# TIME TICKS SEEMS TO BE THE MOST ACCURATE ONE, BUT I WANT IT TO BE "BEHIND" THE SERVER
+# NETWORK TIME TICKS AND TIME_TICKS AT THE MOMENT ARE AT MAX 1 TICK AWAY FROM EACHOTHER
+# SO REPLACE NETWORK TIME TICKS WITH TIME TICKS
 func _ready() -> void:
 	set_process(false)
-
-	var space := get_viewport().world_2d.space
-	PhysicsServer2D.space_set_active(space, false)
 
 
 func _process(delta: float) -> void:
@@ -78,7 +37,7 @@ func _process(delta: float) -> void:
 	if not multiplayer.is_server():
 		_adjust_time_dilation_factor()
 
-	if time_since_last_tick_msecs > tick_duration_msecs:
+	if time_since_last_tick_msecs >= tick_duration_msecs:
 		_run_tick()
 
 
@@ -86,17 +45,14 @@ func _run_tick() -> void:
 	time_ticks += 1
 	time_since_last_tick_msecs -= tick_duration_msecs
 
-	if not _should_signal_ticks and not multiplayer.is_server():
-		return
+	if not multiplayer.is_server():
+		network_time_ticks += 1
 
-	pretick.emit()
-	tick.emit()
-
-	var space := get_viewport().world_2d.space
-	RapierPhysicsServer2D.space_step(space, tick_duration_msecs / 1000.0)
-	RapierPhysicsServer2D.space_flush_queries(space)
-
-	posttick.emit()
+	if _client_should_signal_ticks or multiplayer.is_server():
+		pretick.emit()
+		tick.emit()
+		physics_tick.emit()
+		posttick.emit()
 
 	if multiplayer.is_server():
 		_broadcast_server_time()
@@ -105,13 +61,12 @@ func _run_tick() -> void:
 
 
 func _broadcast_server_time() -> void:
-	_receive_server_time.rpc_id(0, time_ticks, engine_time_msecs)
+	_receive_server_time.rpc_id(0, time_ticks, time_since_last_tick_msecs)
 
 
 @rpc("unreliable_ordered", "authority")
-func _receive_server_time(server_time_ticks: int, server_engine_time_msecs: float) -> void:
+func _receive_server_time(server_time_ticks: int, _server_time_since_last_tick_msecs: float) -> void:
 	latest_server_time_ticks = server_time_ticks
-	latest_server_engine_time_msecs = server_engine_time_msecs
 
 
 func _broadcast_client_time() -> void:
@@ -158,11 +113,10 @@ func _adjust_time_dilation_factor() -> void:
 
 	var desired_time_ticks := (
 		latest_server_time_ticks
-		- msecs_to_ticks(latency_msecs)
-		- msecs_to_ticks(time_since_last_tick_msecs)
+		+ msecs_to_ticks(latency_msecs)
 	)
 
-	var tick_diff := abs(time_ticks - desired_time_ticks)
+	var tick_diff := abs(network_time_ticks - desired_time_ticks)
 
 	if tick_diff <= max_tick_disparity_before_correcting:
 		time_dilation_factor = 1.0
@@ -180,20 +134,59 @@ func _calculate_initial_time_and_latency() -> void:
 func _return_initial_time_and_latency(client_engine_time_msecs: float) -> void:
 	var sender_id := multiplayer.get_remote_sender_id()
 	_receive_initial_time_and_latency.rpc_id(
-		sender_id, client_engine_time_msecs, time_ticks, engine_time_msecs
+		sender_id,
+		client_engine_time_msecs,
+		time_ticks,
+		time_since_last_tick_msecs
 	)
 
 
 @rpc("reliable", "authority")
 func _receive_initial_time_and_latency(
-	old_engine_time_msecs: float, server_time_ticks: int, server_engine_time_msecs: float
+	old_engine_time_msecs: float,
+	server_time_ticks: int,
+	server_time_since_last_tick_msecs: float,
 ) -> void:
 	latency_msecs = (engine_time_msecs - old_engine_time_msecs) * 0.5
 
 	time_ticks = server_time_ticks
+	network_time_ticks = server_time_ticks + msecs_to_ticks(latency_msecs)
 
 	latest_server_time_ticks = server_time_ticks
-	latest_server_engine_time_msecs = server_engine_time_msecs
+
+	time_since_last_tick_msecs = (
+		(server_time_since_last_tick_msecs + latency_msecs) / tick_duration_msecs
+	- int((server_time_since_last_tick_msecs + latency_msecs) / tick_duration_msecs)
+	)
+	
+
+
+func initialise_on_client() -> void:
+	set_process(true)
+	_calculate_initial_time_and_latency()
+
+
+func enable_on_client() -> void:
+	_client_should_signal_ticks = true
+
+
+func enable_on_server() -> void:
+	set_process(true)
+
+
+func shutdown_on_client() -> void:
+	set_process(false)
+
+	latency_msecs = 0.0
+	latency_array.clear()
+
+	time_ticks = 0
+	time_since_last_tick_msecs = 0.0
+	time_dilation_factor = 1.0
+
+	latest_server_time_ticks = 0
+
+	_client_should_signal_ticks = false
 
 
 func get_complete_state_serialised() -> int:
@@ -206,6 +199,21 @@ func deserialise_complete_state(time: int) -> void:
 
 
 #region HELPER FUNCS
+var engine_time_msecs: float:
+	get():
+		return Time.get_ticks_usec()/1000.0
+
+
+var tick_duration_msecs: float:
+	get():
+		return 1000.0/float(ticks_per_second)
+
+
+var interpolation_fraction: float:
+	get():
+		return time_since_last_tick_msecs / tick_duration_msecs
+
+
 func msecs_to_ticks(time_msecs: float) -> int:
 	return ceili(time_msecs / tick_duration_msecs)
 

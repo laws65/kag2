@@ -20,6 +20,13 @@ func _ready() -> void:
 	Client.left_server.connect(_on_left_server)
 
 
+func _process(_delta: float) -> void:
+	if multiplayer.is_server():
+		%Time.text = str(NetworkedClock.time_ticks)
+	else:
+		%Time.text = str(NetworkedClock.network_time_ticks)
+		%OldTime.text = str(NetworkedClock.time_ticks)
+
 func _rebuild_blob_list() -> void:
 	var blobs := Blobs.get_blobs()
 	%BlobList.text = ""
