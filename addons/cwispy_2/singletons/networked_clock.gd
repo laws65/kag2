@@ -14,17 +14,16 @@ var time_since_last_tick_msecs := 0.0
 var ticks_per_second: int = INITIAL_TICKS_PER_SECOND
 
 var latency_msecs: float = 0.0 # client only
-var latency_array: Array[float] # client only
+var _latency_array: Array[float] # client only
 
 var time_dilation_factor := 1.0 # client only
 
 var latest_server_time_ticks: int = 0 # client only
+var _server_time_since_last_tick_msecs: float = 0.0 # client only
 
 var _client_should_signal_ticks := false # client only
 
-# TIME TICKS SEEMS TO BE THE MOST ACCURATE ONE, BUT I WANT IT TO BE "BEHIND" THE SERVER
-# NETWORK TIME TICKS AND TIME_TICKS AT THE MOMENT ARE AT MAX 1 TICK AWAY FROM EACHOTHER
-# SO REPLACE NETWORK TIME TICKS WITH TIME TICKS
+
 func _ready() -> void:
 	set_process(false)
 
@@ -33,6 +32,7 @@ func _process(delta: float) -> void:
 	time_since_last_tick_msecs += delta * 1000.0 * time_dilation_factor
 
 	if not multiplayer.is_server():
+		_server_time_since_last_tick_msecs += delta * 1000.0 * time_dilation_factor
 		_adjust_time_dilation_factor()
 
 	if time_since_last_tick_msecs >= tick_duration_msecs:
@@ -42,6 +42,9 @@ func _process(delta: float) -> void:
 func _run_tick() -> void:
 	time_ticks += 1
 	time_since_last_tick_msecs -= tick_duration_msecs
+	
+	if not multiplayer.is_server():
+		_server_time_since_last_tick_msecs -= tick_duration_msecs
 
 	if _client_should_signal_ticks or multiplayer.is_server():
 		pretick.emit()
@@ -62,6 +65,7 @@ func _broadcast_server_time() -> void:
 @rpc("unreliable_ordered", "authority")
 func _receive_server_time(server_time_ticks: int, _server_time_since_last_tick_msecs: float) -> void:
 	latest_server_time_ticks = server_time_ticks
+	self._server_time_since_last_tick_msecs = _server_time_since_last_tick_msecs
 
 
 func _broadcast_client_time() -> void:
@@ -76,19 +80,19 @@ func _receive_client_time(client_time_ticks: int, client_engine_time_msecs: floa
 
 @rpc("unreliable_ordered", "authority")
 func _return_client_time(old_client_time_ticks: int, old_client_engine_time_msecs: float) -> void:
-	latency_array.push_back(
+	_latency_array.push_back(
 		0.5 * (engine_time_msecs - old_client_engine_time_msecs)
 	)
-	if latency_array.size() == MAX_LATENCY_ARRAY_SIZE:
+	if _latency_array.size() == MAX_LATENCY_ARRAY_SIZE:
 		_adjust_latency()
 
 
 func _adjust_latency() -> void:
-	latency_array.sort()
-	var latency_median := latency_array[floori(MAX_LATENCY_ARRAY_SIZE/2)]
+	_latency_array.sort()
+	var latency_median := _latency_array[floori(MAX_LATENCY_ARRAY_SIZE/2)]
 	var pruned_latency_array: Array[float]
 
-	for latency_value in latency_array:
+	for latency_value in _latency_array:
 		if latency_value < latency_median * 2.0 or latency_value < 20.0:
 			pruned_latency_array.push_back(latency_value)
 
@@ -97,7 +101,7 @@ func _adjust_latency() -> void:
 		total_latency += latency_value
 
 	latency_msecs = total_latency / float(pruned_latency_array.size())
-	latency_array.clear()
+	_latency_array.clear()
 
 
 func _adjust_time_dilation_factor() -> void:
@@ -108,7 +112,9 @@ func _adjust_time_dilation_factor() -> void:
 
 	var desired_time_ticks := (
 		latest_server_time_ticks
-		+ msecs_to_ticks(latency_msecs)
+		+ msecs_to_ticks(
+			latency_msecs + _server_time_since_last_tick_msecs
+		)
 	)
 
 	var tick_diff := abs(time_ticks - desired_time_ticks)
@@ -152,7 +158,6 @@ func _receive_initial_time_and_latency(
 		(server_time_since_last_tick_msecs + latency_msecs) / tick_duration_msecs
 	- int((server_time_since_last_tick_msecs + latency_msecs) / tick_duration_msecs)
 	)
-	
 
 
 func initialise_on_client() -> void:
@@ -172,13 +177,14 @@ func shutdown_on_client() -> void:
 	set_process(false)
 
 	latency_msecs = 0.0
-	latency_array.clear()
+	_latency_array.clear()
 
 	time_ticks = 0
 	time_since_last_tick_msecs = 0.0
 	time_dilation_factor = 1.0
 
 	latest_server_time_ticks = 0
+	_server_time_since_last_tick_msecs = 0.0
 
 	_client_should_signal_ticks = false
 
