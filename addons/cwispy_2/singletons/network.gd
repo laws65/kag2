@@ -14,6 +14,15 @@ var cull_buffer_before_time_ticks: int = -1
 var accept_rpcs_after_time_ticks: int = -1
 
 
+func _ready() -> void:
+	multiplayer.peer_packet.connect(_on_packet_received)
+
+
+func _on_packet_received(_sender_id: int, packet: PackedByteArray) -> void:
+	var rpc_info: RPCInfo = RPCInfo.deserialised(packet)
+	_generic_receive_rpc_id_safe(rpc_info)
+
+
 func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
 	var node: Node = method.get_object()
 	assert(
@@ -36,40 +45,10 @@ func rpc_id_safe(target_id: int, method: Callable, ...args: Array) -> void:
 	var rpc_info := RPCInfo.new(multiplayer.get_unique_id(), node_path, method_name, transmit_time_ticks, args)
 	var serialised_rpc_info := RPCInfo.serialise(rpc_info)
 
-	match method_rpc_config.transfer_mode:
-		MultiplayerPeer.TRANSFER_MODE_RELIABLE:
-			_receive_rpc_id_safe_reliable.rpc_id(target_id, serialised_rpc_info)
-		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE:
-			_receive_rpc_id_safe_unreliable.rpc_id(target_id, serialised_rpc_info)
-		MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED:
-			_receive_rpc_id_safe_unreliable_ordered.rpc_id(target_id, serialised_rpc_info)
+	multiplayer.send_bytes(serialised_rpc_info, target_id, method_rpc_config.rpc_mode)
 
 	if method_rpc_config.get("call_local"):
 		_generic_receive_rpc_id_safe(rpc_info)
-
-
-@rpc("reliable", "any_peer")
-func _receive_rpc_id_safe_reliable(serialised_rpc_info: PackedByteArray) -> void:
-	var rpc_info: RPCInfo = RPCInfo.deserialised(serialised_rpc_info)
-	var sender_id := multiplayer.get_remote_sender_id()
-	rpc_info.sender_id = sender_id
-	_generic_receive_rpc_id_safe(rpc_info)
-
-
-@rpc("unreliable", "any_peer")
-func _receive_rpc_id_safe_unreliable(serialised_rpc_info: PackedByteArray) -> void:
-	var rpc_info: RPCInfo = RPCInfo.deserialised(serialised_rpc_info)
-	var sender_id := multiplayer.get_remote_sender_id()
-	rpc_info.sender_id = sender_id
-	_generic_receive_rpc_id_safe(rpc_info)
-
-
-@rpc("unreliable_ordered", "any_peer")
-func _receive_rpc_id_safe_unreliable_ordered(serialised_rpc_info: PackedByteArray) -> void:
-	var rpc_info: RPCInfo = RPCInfo.deserialised(serialised_rpc_info)
-	var sender_id := multiplayer.get_remote_sender_id()
-	rpc_info.sender_id = sender_id
-	_generic_receive_rpc_id_safe(rpc_info)
 
 
 func _generic_receive_rpc_id_safe(rpc_info: RPCInfo) -> void:
