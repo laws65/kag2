@@ -24,8 +24,8 @@ func _process(_delta: float) -> void:
 	if multiplayer.is_server():
 		%Time.text = str(NetworkedClock.time_ticks)
 	else:
-		%Time.text = str(NetworkedClock.network_time_ticks)
-		%OldTime.text = str(NetworkedClock.time_ticks)
+		%Time.text = str(NetworkedClock.time_ticks)
+		%Latency.text = "Latency: %sms" % int(NetworkedClock.latency_msecs)
 
 func _rebuild_blob_list() -> void:
 	var blobs := Blobs.get_blobs()

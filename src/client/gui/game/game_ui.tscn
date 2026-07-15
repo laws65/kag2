@@ -67,11 +67,11 @@ offset_bottom = 48.0
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 2
 
-[node name="OldTime" type="Label" parent="." unique_id=473029821]
+[node name="Latency" type="Label" parent="." unique_id=289767659]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1047.0
-offset_top = 66.0
-offset_right = 1102.0
-offset_bottom = 111.0
-theme_override_font_sizes/font_size = 32
+offset_left = 880.0
+offset_top = 17.0
+offset_right = 958.0
+offset_bottom = 40.0
+horizontal_alignment = 2

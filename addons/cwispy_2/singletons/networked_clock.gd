@@ -13,8 +13,6 @@ var time_ticks: int = 0
 var time_since_last_tick_msecs := 0.0
 var ticks_per_second: int = INITIAL_TICKS_PER_SECOND
 
-var network_time_ticks: int = 0 # the client's best guess of the current server time
-
 var latency_msecs: float = 0.0 # client only
 var latency_array: Array[float] # client only
 
@@ -44,9 +42,6 @@ func _process(delta: float) -> void:
 func _run_tick() -> void:
 	time_ticks += 1
 	time_since_last_tick_msecs -= tick_duration_msecs
-
-	if not multiplayer.is_server():
-		network_time_ticks += 1
 
 	if _client_should_signal_ticks or multiplayer.is_server():
 		pretick.emit()
@@ -116,7 +111,7 @@ func _adjust_time_dilation_factor() -> void:
 		+ msecs_to_ticks(latency_msecs)
 	)
 
-	var tick_diff := abs(network_time_ticks - desired_time_ticks)
+	var tick_diff := abs(time_ticks - desired_time_ticks)
 
 	if tick_diff <= max_tick_disparity_before_correcting:
 		time_dilation_factor = 1.0
@@ -149,8 +144,7 @@ func _receive_initial_time_and_latency(
 ) -> void:
 	latency_msecs = (engine_time_msecs - old_engine_time_msecs) * 0.5
 
-	time_ticks = server_time_ticks
-	network_time_ticks = server_time_ticks + msecs_to_ticks(latency_msecs)
+	time_ticks = server_time_ticks + msecs_to_ticks(latency_msecs)
 
 	latest_server_time_ticks = server_time_ticks
 
@@ -215,7 +209,7 @@ var interpolation_fraction: float:
 
 
 func msecs_to_ticks(time_msecs: float) -> int:
-	return ceili(time_msecs / tick_duration_msecs)
+	return roundi(time_msecs / tick_duration_msecs)
 
 
 func ticks_to_msecs(time_ticks: int) -> float:
