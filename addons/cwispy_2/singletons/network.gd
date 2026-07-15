@@ -18,8 +18,9 @@ func _ready() -> void:
 	multiplayer.peer_packet.connect(_on_packet_received)
 
 
-func _on_packet_received(_sender_id: int, packet: PackedByteArray) -> void:
+func _on_packet_received(sender_id: int, packet: PackedByteArray) -> void:
 	var rpc_info: RPCInfo = RPCInfo.deserialised(packet)
+	rpc_info.sender_id = sender_id
 	_generic_receive_rpc_id_safe(rpc_info)
 
 
