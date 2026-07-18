@@ -3,19 +3,23 @@ extends Node
 
 signal new_player_joined(new_player: Player)
 signal player_left(old_player: Player)
+signal local_player_joined
 
-@onready var _players_parent := self
+
+var _players_map: Dictionary[int, Player]
 
 
 @rpc("authority", "call_local", "reliable")
 func register_player(player_id: int, extra_data: Dictionary={}) -> void:
 	var new_player := Player.new(player_id, extra_data)
-	_players_parent.add_child(new_player, true)
+	_players_map[player_id] = new_player
+	if player_id == multiplayer.get_unique_id():
+		local_player_joined.emit()
 	new_player_joined.emit(new_player)
 
 
 func add_old_player(player: Player) -> void:
-	_players_parent.add_child(player, true)
+	_players_map[player.get_id()] = player
 
 
 @rpc("authority", "call_local", "reliable")
@@ -24,16 +28,11 @@ func deregister_player(player_id: int) -> void:
 	if not player:
 		return
 
-	_players_parent.remove_child(player)
-	player.queue_free()
 	player_left.emit(player)
 
 
 func reset() -> void:
-	var players := get_players()
-	for player in players:
-		player.queue_free()
-		_players_parent.remove_child(player)
+	_players_map.clear()
 
 
 func get_complete_state_serialised() -> Array[PackedByteArray]:
@@ -52,17 +51,21 @@ func deserialise_complete_state(serialised_players: Array[PackedByteArray]) -> v
 		add_old_player(deserialised_player)
 
 
+func merge_complete_state(serialised_players: Array[PackedByteArray]) -> void:
+	pass # TODO IMPLEMENT
+
+
 #region HELPER FUNCS
 func get_players() -> Array[Player]:
-	var players = _players_parent.get_children()
-	var casted: Array[Player]
-	for player in players:
-		casted.push_back(player as Player)
-	return casted
+	return _players_map.values()
 
 
 func get_player_by_id(player_id: int) -> Player:
-	return _players_parent.get_node_or_null(str(player_id))
+	return _players_map.get(player_id)
+
+
+func has_player(player_id: int) -> bool:
+	return _players_map.get(player_id)
 
 
 func get_local_player() -> Player:

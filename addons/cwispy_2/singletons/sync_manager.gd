@@ -131,3 +131,10 @@ func set_complete_world_state(world_state: Dictionary) -> void:
 		var node: Node = provider[0]
 		var node_name: StringName = provider[1]
 		node.deserialise_complete_state(world_state[node_name])
+
+
+func merge_complete_world_state(world_state: Dictionary) -> void:
+	for provider in _complete_world_state_providers:
+		var node: Node = provider[0]
+		var node_name: StringName = provider[1]
+		node.merge_complete_state(world_state[node_name])

@@ -64,6 +64,10 @@ func deserialise_complete_state(state: Array) -> void:
 	_load_gamemode(state[0], state[1])
 
 
+func merge_complete_state(state: Array) -> void:
+	pass # TODO IMPLEMENT
+
+
 #region HELPER FUNCS
 func get_current_gamemode() -> GamemodeInfo:
 	return _current_gamemode

@@ -10,16 +10,15 @@ var custom_join_data: Dictionary
 
 
 func _ready() -> void:
-	Players.new_player_joined.connect(_on_Player_joined)
+	Players.local_player_joined.connect(_on_local_player_joined)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
 
-func _on_Player_joined(player: Player) -> void:
-	if player.is_my_player():
-		NetworkedClock.enable_on_client()
-		joined_server.emit()
+func _on_local_player_joined() -> void:
+	NetworkedClock.enable_on_client()
+	joined_server.emit()
 
 
 func join_server(address: String="localhost", port: int=50302) -> void:

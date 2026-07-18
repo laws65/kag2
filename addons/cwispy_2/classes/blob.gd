@@ -7,7 +7,7 @@ signal player_id_changed(old_player_id: int, new_player_id: int)
 signal death()
 
 @export var props_to_track_per_snapshot: Array[String] = ["position", "velocity"]
-@export var props_to_spawn_with: Array[String] = ["position", "_player_id"]
+@export var props_to_spawn_with: Array[String] = ["position"]
 
 @export var client_controlled: bool = false
 
@@ -15,7 +15,6 @@ signal death()
 
 @export var health = 3.0
 
-var _player_id := -1
 
 
 func _init() -> void:
@@ -41,23 +40,7 @@ func server_set_player(new_player: Player) -> void:
 
 func server_set_player_id(new_player_id: int) -> void:
 	assert(multiplayer.is_server())
-	Network.rpc_id_safe(0, _set_player_id, new_player_id)
-
-
-@rpc("call_local", "reliable", "authority")
-func _set_player_id(new_player_id: int, notify_own_player: bool = true) -> void:
-	var old_player_id := _player_id
-	_player_id = new_player_id
-
-	if notify_own_player:
-		var old_player := Players.get_player_by_id(old_player_id)
-		if old_player:
-			old_player._set_blob_id(-1, false)
-		var new_player := Players.get_player_by_id(new_player_id)
-		if new_player:
-			new_player._set_blob_id(get_id(), false)
-
-	player_id_changed.emit(old_player_id, new_player_id)
+	Blobs.server_set_ownership(new_player_id, get_id())
 
 
 func server_die() -> void:
@@ -145,11 +128,11 @@ func interpolate_snapshot(
 
 
 func get_player_id() -> int:
-	return _player_id
+	return Blobs.get_blob_id_owner(get_id())
 
 
 func get_player() -> Player:
-	return Players.get_player_by_id(_player_id)
+	return Players.get_player_by_id(get_player_id())
 
 
 func has_player() -> bool:

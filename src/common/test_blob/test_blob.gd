@@ -23,7 +23,7 @@ func _input(event: InputEvent) -> void:
 		jump_pressed = false
 func _on_tick() -> void:
 	if is_my_blob() and client_controlled:
-		var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		var input := NetworkedInput.get_vector("move_left", "move_right", "move_up", "move_down")
 		
 		#apply_central_impulse(Vector2(input.x * move_speed, 0))
 

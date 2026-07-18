@@ -13,6 +13,8 @@ var time_ticks: int = 0
 var time_since_last_tick_msecs := 0.0
 var ticks_per_second: int = INITIAL_TICKS_PER_SECOND
 
+var broadcast_time: bool = true
+
 var latency_msecs: float = 0.0 # client only
 var _latency_array: Array[float] # client only
 
@@ -29,6 +31,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	
 	time_since_last_tick_msecs += delta * 1000.0 * time_dilation_factor
 
 	if not multiplayer.is_server():
@@ -36,15 +39,15 @@ func _process(delta: float) -> void:
 		_adjust_time_dilation_factor()
 
 	if time_since_last_tick_msecs >= tick_duration_msecs:
-		_run_tick()
+		time_since_last_tick_msecs -= tick_duration_msecs
+		if not multiplayer.is_server():
+			_server_time_since_last_tick_msecs -= tick_duration_msecs
+			
+		run_tick()
 
 
-func _run_tick() -> void:
+func run_tick() -> void:
 	time_ticks += 1
-	time_since_last_tick_msecs -= tick_duration_msecs
-	
-	if not multiplayer.is_server():
-		_server_time_since_last_tick_msecs -= tick_duration_msecs
 
 	if _client_should_signal_ticks or multiplayer.is_server():
 		pretick.emit()
@@ -52,10 +55,11 @@ func _run_tick() -> void:
 		physics_tick.emit()
 		posttick.emit()
 
-	if multiplayer.is_server():
-		_broadcast_server_time()
-	else:
-		_broadcast_client_time()
+	if broadcast_time:
+		if multiplayer.is_server():
+			_broadcast_server_time()
+		else:
+			_broadcast_client_time()
 
 
 func _broadcast_server_time() -> void:
@@ -196,6 +200,10 @@ func get_complete_state_serialised() -> int:
 func deserialise_complete_state(time: int) -> void:
 	time_ticks = time
 	Network.cull_buffer_before_time_ticks = time
+
+
+func merge_complete_state(state: int) -> void:
+	pass # TODO IMPLEMENT
 
 
 #region HELPER FUNCS

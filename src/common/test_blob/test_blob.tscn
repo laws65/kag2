@@ -16,7 +16,7 @@ freeze_mode = 1
 continuous_cd = 1
 script = ExtResource("1_5gim2")
 props_to_track_per_snapshot = Array[String](["position", "linear_velocity"])
-props_to_spawn_with = Array[String](["_player_id", "position", "linear_velocity"])
+props_to_spawn_with = Array[String](["position", "linear_velocity"])
 client_controlled = true
 metadata/_custom_type_script = "uid://bk0d7x26sdivv"
 

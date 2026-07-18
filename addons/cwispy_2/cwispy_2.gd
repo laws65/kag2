@@ -12,6 +12,7 @@ const autoloads := {
 	"Network": "network.gd",
 	"GamemodeManager": "gamemode_manager.gd",
 	"MapManager": "map_manager.gd",
+	"NetworkedInput": "networked_input.gd",
 }
 
 

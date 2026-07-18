@@ -7,6 +7,36 @@ signal on_blob_die(dead_blob: Blob)
 
 var _blobs_parent: Node
 
+var _blob_ownership_map: Dictionary[int, int] # BLOB_ID : PLAYER_ID
+var _player_ownership_map: Dictionary[int, int] # PLAYER_ID : BLOB_ID
+
+
+func server_set_ownership(player_id: int, blob_id: int) -> void:
+	assert(multiplayer.is_server())
+	Network.rpc_id_safe(0, _set_ownership, player_id, blob_id)
+
+
+@rpc("authority", "reliable", "call_local")
+func _set_ownership(player_id: int, blob_id: int, cascade: bool = true) -> void:
+	if player_id == -1 and blob_id == -1:
+		return
+	
+	var old_player_id := get_blob_id_owner(blob_id)
+	var old_blob_id := get_player_id_owner(player_id)
+	
+	if player_id != -1:
+		_player_ownership_map[player_id] = blob_id
+	if blob_id != -1:
+		_blob_ownership_map[blob_id] = player_id
+	
+	var blob := get_blob_by_id(blob_id)
+	if blob:
+		blob.player_id_changed.emit(old_player_id, player_id)
+
+	if cascade:
+		_set_ownership(old_player_id, -1, false)
+		_set_ownership(-1, old_blob_id, false)
+
 
 func server_create_blob(blob_filepath: String, spawn_data: Dictionary = {}) -> Blob:
 	assert(multiplayer.is_server())
@@ -51,7 +81,6 @@ func reset() -> void:
 		_blobs_parent.remove_child(blob)
 
 
-
 func pass_spawn_data_into_dict(out: Dictionary) -> void:
 	var blob_data: Array[Dictionary]
 	var blobs := Blobs.get_blobs()
@@ -80,6 +109,10 @@ func deserialise_complete_state(blobs: Array[Dictionary]) -> void:
 		var filepath: String = blob["filepath"]
 		var spawn_data: Dictionary = blob["spawn_data"]
 		_create_blob(filepath, spawn_data)
+
+
+func merge_complete_state(blobs: Array[Dictionary]) -> void:
+	pass # TODO IMPLEMENT
 
 
 #region HELPER FUNCS
@@ -115,4 +148,12 @@ func has_local_blob() -> bool:
 
 	var local_player := Players.get_local_player()
 	return local_player.has_blob()
+
+
+func get_blob_id_owner(blob_id: int) -> int:
+	return _blob_ownership_map.get(blob_id, -1)
+
+
+func get_player_id_owner(player_id: int) -> int:
+	return _player_ownership_map.get(player_id, -1)
 #endregion

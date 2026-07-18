@@ -46,6 +46,10 @@ func deserialise_complete_state(state: Array) -> void:
 	_load_map(state[0], state[1])
 
 
+func merge_complete_state(state: Array) -> void:
+	pass # TODO implement
+
+
 #region HELPER FUNCS
 func get_current_map() -> Map:
 	return _current_map

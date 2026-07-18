@@ -3,9 +3,8 @@ class_name Player
 
 
 var props: Dictionary
-static var secret_members: Array[String]
+static var secret_members: Array[StringName]
 
-var _blob_id := -1
 
 func _init(id: int, extra_data: Dictionary) -> void:
 	name = str(id)
@@ -35,11 +34,11 @@ static func deserialise(serialised: PackedByteArray) -> Player:
 	return new_player
 
 
-func get_prop(prop_name: String) -> Variant:
+func get_prop(prop_name: StringName) -> Variant:
 	return props.get(prop_name)
 
 
-func set_prop(prop_name: String, value: Variant) -> void:
+func set_prop(prop_name: StringName, value: Variant) -> void:
 	props.set(prop_name, value)
 
 
@@ -53,22 +52,7 @@ func server_set_blob(new_blob: Blob) -> void:
 
 func server_set_blob_id(new_blob_id: int) -> void:
 	assert(multiplayer.is_server())
-	Network.rpc_id_safe(0, _set_blob_id, new_blob_id)
-
-
-@rpc("call_local", "reliable", "authority")
-func _set_blob_id(new_blob_id: int, notify_own_blob: bool = true) -> void:
-	var old_blob_id := _blob_id
-	_blob_id = new_blob_id
-
-	if notify_own_blob:
-		var old_blob := Blobs.get_blob_by_id(old_blob_id)
-		if old_blob:
-			old_blob._set_player_id(-1, false)
-
-		var new_blob := Blobs.get_blob_by_id(new_blob_id)
-		if new_blob:
-			new_blob._set_player_id(get_id(), false)
+	Blobs.server_set_ownership(get_id(), new_blob_id)
 
 
 func has_blob() -> bool:
@@ -76,11 +60,11 @@ func has_blob() -> bool:
 
 
 func get_blob_id() -> int:
-	return _blob_id
+	return Blobs.get_player_id_owner(get_id())
 
 
 func get_blob() -> Blob:
-	return Blobs.get_blob_by_id(_blob_id)
+	return Blobs.get_blob_by_id(get_blob_id())
 
 
 func is_my_player() -> bool:
