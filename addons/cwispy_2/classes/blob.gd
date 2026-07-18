@@ -15,8 +15,16 @@ signal death()
 
 @export var health = 3.0
 
+# WORK ON MAKING A BLOB JUST A CLASS like player
+"""
+Call it NetworkedEntity or something
+It should implement get_state() set_state() and rewind_state()
+rewind_state() should suspend the entity if it has been deleted already
+the manager should create a temporary blob if it has been deleted in the past <---------
+and when calling rewind_state(), the rewind manager should store its state so that it can be reverted back
 
 
+"""
 func _init() -> void:
 	NetworkedClock.tick.connect(_on_tick_internal)
 
@@ -116,15 +124,6 @@ func set_snapshop(snapshot: Dictionary) -> void:
 				)
 		else:
 			set(prop, snapshot[prop])
-
-
-func interpolate_snapshot(
-	old_snapshot: Dictionary,
-	new_snapshot: Dictionary,
-	interpolation_delta: float
-) -> void:
-	for prop in new_snapshot.keys():
-		set(prop, lerp(old_snapshot[prop], new_snapshot[prop], interpolation_delta))
 
 
 func get_player_id() -> int:
