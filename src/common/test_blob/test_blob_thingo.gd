@@ -8,8 +8,6 @@ var jump_force = 250
 @export var deceleration := 2500.0
 
 
-
-
 var jump_pressed: bool = false
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("move_up"):
