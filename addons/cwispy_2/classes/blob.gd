@@ -1,41 +1,51 @@
 @icon ("res://addons/icons/human.svg")
-extends RapierRigidBody2D
+extends Node
 class_name Blob
 
 
 signal player_id_changed(old_player_id: int, new_player_id: int)
 signal death()
 
-@export var props_to_track_per_snapshot: Array[String] = ["position", "velocity"]
-@export var props_to_spawn_with: Array[String] = ["position"]
+var _id: int = -1
+
 
 @export var client_controlled: bool = false
-
-@export var display_to_interpolate: Array[Node2D]
-
-@export var health = 3.0
-
-# WORK ON MAKING A BLOB JUST A CLASS like player
-"""
-Call it NetworkedEntity or something
-It should implement get_state() set_state() and rewind_state()
-rewind_state() should suspend the entity if it has been deleted already
-the manager should create a temporary blob if it has been deleted in the past <---------
-and when calling rewind_state(), the rewind manager should store its state so that it can be reverted back
+@export var scene: Node
 
 
-"""
 func _init() -> void:
 	NetworkedClock.tick.connect(_on_tick_internal)
 
 
 func _on_tick_internal() -> void:
-	if not is_queued_for_deletion():
+	if not scene.is_queued_for_deletion():
 		_on_tick()
 
 
+#region ABSTRACT
 func _on_tick() -> void:
 	pass
+
+
+func rewind_to_snapshot(snapshot: Dictionary) -> void:
+	pass
+
+
+func get_spawn_data() -> Dictionary:
+	return {}
+
+
+func set_spawn_data(spawn_data: Dictionary) -> void:
+	pass
+
+
+func get_snapshot() -> Dictionary:
+	return {}
+
+
+func set_snapshot(snapshot: Dictionary) -> void:
+	pass
+#endregion
 
 
 func server_set_player(new_player: Player) -> void:
@@ -53,77 +63,16 @@ func server_set_player_id(new_player_id: int) -> void:
 
 func server_die() -> void:
 	assert(multiplayer.is_server(), "Can't kill blob on client")
-	Network.rpc_id_safe(0, _die)
-
-
-@rpc("authority", "call_local", "reliable")
-func _die() -> void:
-	queue_free()
-	get_parent().remove_child(self)
-
-	death.emit()
-	Blobs.on_blob_die.emit(self)
+	Blobs.kill_blob(self)
 
 
 #region HELPER FUNCS
 func set_id(new_id: int) -> void:
-	name = str(new_id)
+	_id = new_id
 
 
 func get_id() -> int:
-	return int(name)
-
-
-func get_spawn_data() -> Dictionary:
-	var spawn_data: Dictionary
-	for spawn_data_name in props_to_spawn_with:
-		spawn_data[spawn_data_name] = get(spawn_data_name)
-	spawn_data["id"] = get_id()
-	return spawn_data
-
-
-func set_spawn_data(spawn_data: Dictionary) -> void:
-	for key in spawn_data.keys():
-		if key == "id":
-			set_id(spawn_data[key])
-		elif key == "position":
-			PhysicsServer2D.body_set_state(
-				get_rid(),
-				PhysicsServer2D.BODY_STATE_TRANSFORM,
-				Transform2D.IDENTITY.translated(spawn_data["position"])
-			)
-		else:
-			set(key, spawn_data[key])
-
-
-func get_snapshot() -> Dictionary:
-	var snapshot: Dictionary
-	for prop in props_to_track_per_snapshot:
-		snapshot[prop] = get(prop)
-	return snapshot
-
-
-const MAX_VELOCITY_CORRECTION := 3
-
-
-func set_snapshop(snapshot: Dictionary) -> void:
-	for prop in snapshot.keys():
-		if prop == "position":
-			PhysicsServer2D.body_set_state(
-				get_rid(),
-				PhysicsServer2D.BODY_STATE_TRANSFORM,
-				Transform2D.IDENTITY.translated(snapshot["position"])
-			)
-		elif prop == "linear_velocity":
-			var new_velocity: Vector2 = snapshot["linear_velocity"]
-			if linear_velocity.distance_squared_to(new_velocity) > pow(MAX_VELOCITY_CORRECTION, 2):
-				PhysicsServer2D.body_set_state(
-					get_rid(),
-					PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY,
-					snapshot["linear_velocity"]
-				)
-		else:
-			set(prop, snapshot[prop])
+	return _id
 
 
 func get_player_id() -> int:

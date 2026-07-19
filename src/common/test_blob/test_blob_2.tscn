@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://c71xx6esib0nx"]
+
+[ext_resource type="Script" uid="uid://dyfi5igrkvw1v" path="res://src/common/test_blob/test_blob_2.gd" id="1_nq62g"]
+[ext_resource type="Script" uid="uid://c2gd6kp7u0suj" path="res://src/common/test_blob/test_blob_thingo.gd" id="2_fq1vt"]
+[ext_resource type="Texture2D" uid="uid://k51rldx3p8yo" path="res://icon.svg" id="3_hykgj"]
+
+[node name="TestBlob2" type="CharacterBody2D" unique_id=1449251020]
+script = ExtResource("1_nq62g")
+metadata/_custom_type_script = "uid://c5qpdmvd63ugb"
+
+[node name="Blob" type="Node" parent="." unique_id=283105092 node_paths=PackedStringArray("scene")]
+script = ExtResource("2_fq1vt")
+client_controlled = true
+scene = NodePath("..")
+metadata/_custom_type_script = "uid://bk0d7x26sdivv"
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=207004218]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("3_hykgj")
+
+[node name="Label" type="Label" parent="." unique_id=553454596]
+offset_left = -31.0
+offset_top = -112.0
+offset_right = 9.0
+offset_bottom = -89.0
+
+[connection signal="player_id_changed" from="Blob" to="." method="_on_player_id_changed"]

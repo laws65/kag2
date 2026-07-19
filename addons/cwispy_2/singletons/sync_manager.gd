@@ -56,7 +56,8 @@ func _render_world_snapshot_tick() -> void:
 		if blob.is_my_blob():
 			_display_ghost_blob(blob_id, render_snapshot[blob_id], render_snapshot[blob_id], 1)
 			continue
-		blob.set_snapshop(render_snapshot[blob_id])
+
+		blob.set_snapshot(render_snapshot[blob_id])
 
 
 func _transmit_blob_snapshots() -> void:
@@ -92,9 +93,10 @@ func _transmit_client_snapshot() -> void:
 func _receive_client_blob_snapshot(snapshot: Dictionary) -> void:
 	var player_id := multiplayer.get_remote_sender_id()
 	var player := Players.get_player_by_id(player_id)
+
 	if is_instance_valid(player) and player.has_blob():
 		var blob := player.get_blob()
-		blob.set_snapshop(snapshot)
+		blob.set_snapshot(snapshot)
 
 
 func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapshot: Dictionary, interpolation_delta: float) -> void:

@@ -9,7 +9,7 @@ func _ready() -> void:
 func _on_Player_joined(new_player: Player) -> void:
 	if multiplayer.is_server():
 		var random_spawn := Vector2(randi_range(-100, 100), randi_range(-100, 100))
-		var blob := Blobs.server_create_blob("res://src/common/test_blob/test_blob.tscn", {"position": random_spawn})
+		var blob := Blobs.server_create_blob("res://src/common/test_blob/test_blob_2.tscn", {"position": random_spawn})
 		blob.server_set_player(new_player)
 
 
