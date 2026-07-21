@@ -63,7 +63,7 @@ func server_set_player_id(new_player_id: int) -> void:
 
 func server_die() -> void:
 	assert(multiplayer.is_server(), "Can't kill blob on client")
-	Blobs.kill_blob(self)
+	Blobs.server_kill_blob(self)
 
 
 #region HELPER FUNCS

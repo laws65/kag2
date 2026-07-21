@@ -19,7 +19,7 @@ func _input(event: InputEvent) -> void:
 func _on_tick() -> void:
 	if is_my_blob() and client_controlled:
 		var input := NetworkedInput.get_vector("move_left", "move_right", "move_up", "move_down")
-		
+
 		#apply_central_impulse(Vector2(input.x * move_speed, 0))
 
 		if jump_pressed and scene.is_on_floor():
@@ -27,7 +27,7 @@ func _on_tick() -> void:
 			jump_pressed = false
 
 		#apply_central_impulse(-linear_velocity * 0.01)
-		
+
 		scene.velocity = input * 100
 		scene.move_and_slide()
 

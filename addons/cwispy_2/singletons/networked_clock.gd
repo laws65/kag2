@@ -31,7 +31,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	
 	time_since_last_tick_msecs += delta * 1000.0 * time_dilation_factor
 
 	if not multiplayer.is_server():
@@ -42,7 +41,7 @@ func _process(delta: float) -> void:
 		time_since_last_tick_msecs -= tick_duration_msecs
 		if not multiplayer.is_server():
 			_server_time_since_last_tick_msecs -= tick_duration_msecs
-			
+
 		run_tick()
 
 

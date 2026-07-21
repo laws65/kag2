@@ -11,7 +11,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var mouse_pos := blob.get_global_mouse_position()
+	var mouse_pos := get_global_mouse_position()
 
 	var dist_squared := mouse_pos.distance_squared_to(blob.position)
 	visible = dist_squared < pow(hover_distance, 2)

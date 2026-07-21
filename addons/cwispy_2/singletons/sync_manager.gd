@@ -1,12 +1,12 @@
 extends Node
 
 
-var snapshot_buffer := []
+var _world_state_buffer := RingBuffer.new(50)
 var _interpolation_buffer_min_size_ticks := 0
 
 
 var _complete_world_state_providers: Array[Array] # [[node, node_name], [node, node_name]]
-
+var rewinding := false
 
 func _ready() -> void:
 	NetworkedClock.pretick.connect(_on_pre_tick)
@@ -27,7 +27,7 @@ func register_complete_world_state_provider(node: Node, node_name: StringName) -
 
 
 func _on_pre_tick() -> void:
-	if not multiplayer.is_server():
+	if not multiplayer.is_server() and not rewinding:
 		_render_world_snapshot_tick()
 
 
@@ -39,15 +39,22 @@ func _on_post_tick() -> void:
 
 
 func reset() -> void:
-	snapshot_buffer.clear()
+	_world_state_buffer.clear()
 	_interpolation_buffer_min_size_ticks = 0
 
-
+# receive world snapshot
+# tick it all the way back to the present
 func _render_world_snapshot_tick() -> void:
-	if snapshot_buffer.size() < 1 + _interpolation_buffer_min_size_ticks:
+	#if snapshot_buffer.size() < 1 + _interpolation_buffer_min_size_ticks:
+	#	return
+
+	var render_time_ticks: int = _world_state_buffer.greatest()
+	var target_world_state: Dictionary = _world_state_buffer.retrieve(render_time_ticks)
+	if target_world_state["time"] != render_time_ticks:
 		return
 
-	var render_snapshot: Dictionary = snapshot_buffer[-1 - _interpolation_buffer_min_size_ticks]["snapshots"]
+	var render_snapshot: Dictionary = target_world_state["snapshots"]
+	#var render_snapshot: Dictionary = snapshot_buffer[-1 - _interpolation_buffer_min_size_ticks]["snapshots"]
 
 	for blob_id in render_snapshot.keys():
 		var blob := Blobs.get_blob_by_id(blob_id)
@@ -55,9 +62,26 @@ func _render_world_snapshot_tick() -> void:
 			continue
 		if blob.is_my_blob():
 			_display_ghost_blob(blob_id, render_snapshot[blob_id], render_snapshot[blob_id], 1)
-			continue
 
 		blob.set_snapshot(render_snapshot[blob_id])
+
+	var tick_difference := NetworkedClock.time_ticks - render_time_ticks
+	if tick_difference > 1000:
+		return
+
+	return
+	var saved_tick := NetworkedClock.time_ticks
+	NetworkedClock.broadcast_time = false
+	rewinding = true
+	while tick_difference >= 1:
+
+		NetworkedClock.run_tick()
+		tick_difference -= 1
+		#print(tick_difference)
+	rewinding = false
+
+	NetworkedClock.time_ticks = saved_tick
+	NetworkedClock.broadcast_time = true
 
 
 func _transmit_blob_snapshots() -> void:
@@ -72,14 +96,8 @@ func _transmit_blob_snapshots() -> void:
 
 @rpc("authority", "unreliable")
 func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time_ticks: int) -> void:
-	var to_insert := {"time": snapshot_time_ticks, "snapshots": blob_snapshots}
-
-	for i in snapshot_buffer.size():
-		if snapshot_time_ticks < snapshot_buffer[i]["time"]:
-			snapshot_buffer.insert(i, to_insert)
-			return
-
-	snapshot_buffer.push_back(to_insert)
+	var to_insert := {"time": snapshot_time_ticks, "snapshots": blob_snapshots, "authority": true}
+	_world_state_buffer.put(to_insert, snapshot_time_ticks)
 
 
 func _transmit_client_snapshot() -> void:
@@ -116,7 +134,7 @@ func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapsho
 		interpolation_delta
 	)
 
-
+#region STATE
 func get_complete_world_state() -> Dictionary:
 	var out: Dictionary
 
@@ -140,3 +158,4 @@ func merge_complete_world_state(world_state: Dictionary) -> void:
 		var node: Node = provider[0]
 		var node_name: StringName = provider[1]
 		node.merge_complete_state(world_state[node_name])
+#endregion

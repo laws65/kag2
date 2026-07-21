@@ -22,5 +22,5 @@ func _ready() -> void:
 
 func _on_player_id_changed(_old_player_id: int, new_player_id: int) -> void:
 	$Label.text = str(new_player_id)
-	
+
 	#freeze = not is_my_blob() or not client_controlled

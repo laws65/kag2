@@ -31,7 +31,7 @@ func _on_query_response(server_details: Dictionary) -> void:
 func _on_query_finished(_response: int) -> void:
 	$RefreshServerList.text = "Refresh Browser"
 	$RefreshServerList.disabled = false
-	
+
 	var list := _get_selected_tab_list()
 	if list.get_children().is_empty():
 		var no_servers_found_scene = load("res://src/client/gui/server_browser/no_servers_found.tscn")
@@ -87,12 +87,12 @@ func _refresh_server_list() -> void:
 
 func _calculate_filters() -> Array:
 	var filters := []
-	
+
 	if $%HideEmpty.button_pressed:
 		filters.push_back(["hasplayers", ""])
 	if not %ShowFull.button_pressed:
 		filters.push_back(["notfull", ""])
-	
+
 	return filters
 
 
@@ -101,5 +101,5 @@ func _on_visibility_changed() -> void:
 		_refresh_server_list()
 
 # example server
-#  "name": "32.216.76.65:7777", "connection_address": "32.216.76.65:7777", "query_address": "32.216.76.65:27015", "ping": 2000, "success_response": false, "no_refresh": true, "game_dir": "unrealtest", "map": "MP_CanalsG3", "description": "Gears of War 3", "app_id": 480, "players": 0, "max_players": 0, "bot_players": 8, "password": false, "secure": false, "last_played": 0, "server_version": 1000, "game_tags": "GearGameTDM_Newb_Content", "steam_id": 90288387899000833 
-#  "name": "105.109.241.44:16261", "connection_address": "105.109.241.44:16261", "query_address": "105.109.241.44:16261", "ping": 2000, "success_response": false, "no_refresh": true, "game_dir": "zomboid", "map": "Muldraugh, KY", "description": "Project Zomboid", "app_id": 480, "players": 0, "max_players": 0, "bot_players": 0, "password": false, "secure": true, "last_played": 0, "server_version": 1000, "game_tags": "hidden;hosted;vanilla;VERSION:42.17", "steam_id": 90288382905803801 
+#  "name": "32.216.76.65:7777", "connection_address": "32.216.76.65:7777", "query_address": "32.216.76.65:27015", "ping": 2000, "success_response": false, "no_refresh": true, "game_dir": "unrealtest", "map": "MP_CanalsG3", "description": "Gears of War 3", "app_id": 480, "players": 0, "max_players": 0, "bot_players": 8, "password": false, "secure": false, "last_played": 0, "server_version": 1000, "game_tags": "GearGameTDM_Newb_Content", "steam_id": 90288387899000833
+#  "name": "105.109.241.44:16261", "connection_address": "105.109.241.44:16261", "query_address": "105.109.241.44:16261", "ping": 2000, "success_response": false, "no_refresh": true, "game_dir": "zomboid", "map": "Muldraugh, KY", "description": "Project Zomboid", "app_id": 480, "players": 0, "max_players": 0, "bot_players": 0, "password": false, "secure": true, "last_played": 0, "server_version": 1000, "game_tags": "hidden;hosted;vanilla;VERSION:42.17", "steam_id": 90288382905803801

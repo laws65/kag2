@@ -24,15 +24,15 @@ func server_set_ownership(player_id: int, blob_id: int) -> void:
 func _set_ownership(player_id: int, blob_id: int, cascade: bool = true) -> void:
 	if player_id == -1 and blob_id == -1:
 		return
-	
+
 	var old_player_id := get_blob_id_owner(blob_id)
 	var old_blob_id := get_player_id_owner(player_id)
-	
+
 	if player_id != -1:
 		_player_to_blob_map[player_id] = blob_id
 	if blob_id != -1:
 		_blob_to_player_map[blob_id] = player_id
-	
+
 	var blob := get_blob_by_id(blob_id)
 	if blob:
 		blob.player_id_changed.emit(old_player_id, player_id)
@@ -77,6 +77,7 @@ func _create_blob(scene_filepath: String, blob_id: int, spawn_data: Dictionary) 
 	_blobs_parent.add_child(new_scene, true)
 
 	return new_blob
+
 
 func server_kill_blob(blob: Blob) -> void:
 	assert(multiplayer.is_server())
