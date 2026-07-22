@@ -62,3 +62,17 @@ func _deserialise_inputs(bytes: PackedByteArray) -> void:
 	var mouse_x := buffer.get_float()
 	var mouse_y := buffer.get_float()
 	inputs["mouse_pos"] = Vector2(mouse_x, mouse_y)
+
+
+func _get_empty_input() -> PackedByteArray:
+	var temp_copy := inputs.duplicate()
+	inputs["mouse_pos"] = Vector2.ZERO
+
+	var input_bytes := _serialise_inputs()
+	inputs = temp_copy
+
+	return input_bytes
+
+
+func _get_predicted_input(prev_input: PackedByteArray) -> PackedByteArray:
+	return prev_input

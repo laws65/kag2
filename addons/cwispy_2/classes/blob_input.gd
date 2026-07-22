@@ -19,3 +19,13 @@ func _serialise_inputs() -> PackedByteArray:
 
 func _deserialise_inputs(bytes: PackedByteArray) -> void:
 	push_error("Unimplemented")
+
+
+func _get_empty_input() -> PackedByteArray:
+	push_error("Unimplemented")
+	return PackedByteArray()
+
+
+func _get_predicted_input(prev_input: PackedByteArray) -> PackedByteArray:
+	push_error("Unimplemented!")
+	return PackedByteArray()

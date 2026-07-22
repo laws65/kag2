@@ -56,18 +56,51 @@ func _insert_input_into_collection(player_id: int, timestamp: int, input_bytes: 
 
 func _retrieve_input(player_id: int, target_timestamp: int) -> PackedByteArray:
 	if not _input_collection.has(player_id):
-		# generate empty input
-		return PackedByteArray()
+		return _get_empty_input(player_id)
+
 	var timestamp_and_input = _input_collection[player_id].retrieve(target_timestamp)
 	if not timestamp_and_input:
-		# input doesn't exist at timestamp, predict it
-		return PackedByteArray()
+		return _get_predicted_input(player_id)
+
 	var input_timestamp: int = timestamp_and_input[0]
 	if input_timestamp != target_timestamp:
-		# input doesn't exist at timestamp, predict it
-		return PackedByteArray()
+		return _get_predicted_input(player_id)
+
 	var input_bytes: PackedByteArray = timestamp_and_input[1]
 	return input_bytes
+
+
+func _get_empty_input(player_id: int) -> PackedByteArray:
+	var player := Players.get_player_by_id(player_id)
+	if not player:
+		return PackedByteArray()
+
+	var blob := player.get_blob()
+	if not blob:
+		return PackedByteArray()
+
+	var input := blob.input
+	if not input:
+		return PackedByteArray()
+
+	return input._get_empty_input()
+
+
+func _get_predicted_input(player_id: int) -> PackedByteArray:
+	var player := Players.get_player_by_id(player_id)
+	if not player:
+		return PackedByteArray()
+
+	var blob := player.get_blob()
+	if not blob:
+		return PackedByteArray()
+
+	var input := blob.input
+	if not input:
+		return PackedByteArray()
+
+	var prev_input: PackedByteArray = _input_collection[player_id].retrieve(_input_collection[player_id].greatest())[1]
+	return input._get_predicted_input(prev_input)
 
 
 @rpc("unreliable", "any_peer")
