@@ -33,7 +33,7 @@ func _on_pre_tick() -> void:
 
 func _on_post_tick() -> void:
 	if multiplayer.is_server():
-		_transmit_blob_snapshots()
+		_transmit_world_state()
 	elif Blobs.has_local_blob():
 		_transmit_client_snapshot()
 
@@ -62,35 +62,36 @@ func _render_world_snapshot_tick() -> void:
 			continue
 		if blob.is_my_blob():
 			_display_ghost_blob(blob_id, render_snapshot[blob_id], render_snapshot[blob_id], 1)
-
-		blob.set_snapshot(render_snapshot[blob_id])
+		else:
+			blob.set_snapshot(render_snapshot[blob_id])
 
 	var tick_difference := NetworkedClock.time_ticks - render_time_ticks
 	if tick_difference > 1000:
 		return
-
 	return
 	var saved_tick := NetworkedClock.time_ticks
 	NetworkedClock.broadcast_time = false
 	rewinding = true
-	while tick_difference >= 1:
-
+	for _i in range(render_time_ticks + 1, saved_tick + 1):
 		NetworkedClock.run_tick()
-		tick_difference -= 1
-		#print(tick_difference)
+
 	rewinding = false
 
 	NetworkedClock.time_ticks = saved_tick
 	NetworkedClock.broadcast_time = true
 
 
-func _transmit_blob_snapshots() -> void:
+func _transmit_world_state() -> void:
 	var blobs := Blobs.get_blobs()
 	var to_transmit: Dictionary
 	for blob in blobs:
 		var snapshot := blob.get_snapshot()
 		to_transmit[blob.get_id()] = snapshot
 	var time_ticks: int = NetworkedClock.time_ticks
+
+	for player_id in multiplayer.get_peers():
+		if NetworkedInput.most_recent_consumed_inputs.has(player_id):
+			NetworkedInput._acknowledge_input.rpc_id(player_id, NetworkedInput.most_recent_consumed_inputs[player_id])
 	_receive_server_blob_snapshots.rpc_id(0, to_transmit, time_ticks)
 
 
@@ -99,7 +100,13 @@ func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time_ti
 	var to_insert := {"time": snapshot_time_ticks, "snapshots": blob_snapshots, "authority": true}
 	_world_state_buffer.put(to_insert, snapshot_time_ticks)
 
+	print("receiving world state %s at time %s and acked input %s" % [snapshot_time_ticks, NetworkedClock.time_ticks, NetworkedInput.most_recent_consumed_inputs.get(multiplayer.get_unique_id())])
 
+ # MAKE A SYSTEM WHERE THE SERVER RUNS 1 TICK FOR EACH 1 INPUT
+# USE THE CLIENT CALCULATED PING TO DETERMINE WHICH INPUT THE SERVER SHOULD BE USING
+# IF INPUT IS MISSING, INSERT A PREDICTED INPUT INTO THE INPUT COLLECTION
+# IF TOO MANY ARE MISSING, THAT'S OKAY, BECAUSE IT WILL BE CAUSED BY PING AND THIS PING CALCULATION WILL CHANGE
+# IF THE GAP BETWEEN THE MOST RECENTLY USED AND THE MOST RECENTLY AVAILABLE IS TOO LARGE, RUN MULTIPLE TICKS IN 1 FRAME
 func _transmit_client_snapshot() -> void:
 	var my_blob := Blobs.get_local_blob()
 	if is_instance_valid(my_blob):
@@ -114,7 +121,7 @@ func _receive_client_blob_snapshot(snapshot: Dictionary) -> void:
 
 	if is_instance_valid(player) and player.has_blob():
 		var blob := player.get_blob()
-		blob.set_snapshot(snapshot)
+		#blob.set_snapshot(snapshot)
 
 
 func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapshot: Dictionary, interpolation_delta: float) -> void:

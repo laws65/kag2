@@ -31,5 +31,5 @@ func greatest() -> int:
 
 func print_values() -> void:
 	for value in _buffer:
-		if not value == null:
+		if value != null:
 			print(value)

@@ -17,8 +17,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_tick() -> void:
-	if is_my_blob() and client_controlled:
-		var input := NetworkedInput.get_vector("move_left", "move_right", "move_up", "move_down")
+	if (is_my_blob() or multiplayer.is_server()) and client_controlled:
+		var inputs: Vector2
+		inputs.x = int(input.inputs["move_right"]) - int(input.inputs["move_left"])
+		inputs.y = int(input.inputs["move_down"]) - int(input.inputs["move_up"])
+		inputs = inputs.normalized()
 
 		#apply_central_impulse(Vector2(input.x * move_speed, 0))
 
@@ -28,7 +31,7 @@ func _on_tick() -> void:
 
 		#apply_central_impulse(-linear_velocity * 0.01)
 
-		scene.velocity = input * 100
+		scene.velocity = inputs * 250
 		scene.move_and_slide()
 
 

@@ -11,6 +11,7 @@ var _id: int = -1
 
 @export var client_controlled: bool = false
 @export var scene: Node
+@export var input: BlobInput
 
 
 func _init() -> void:

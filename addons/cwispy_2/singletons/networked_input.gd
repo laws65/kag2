@@ -5,29 +5,7 @@ var _input_collection: Dictionary[int, RingBuffer] # player id: buffer
 
 var _inputs_to_transmit: Dictionary[int, PackedByteArray] # timestamp : input bytes
 
-var _time: int = 0
-
-
-enum {
-	MOVE_RIGHT = 1 << 0,
-	MOVE_LEFT = 1 << 1,
-	MOVE_DOWN = 1 << 2,
-	MOVE_UP = 1 << 3,
-	INTERACT = 1 << 4,
-	LEFT_MOUSE = 1 << 5,
-	RIGHT_MOUSE = 1 << 6,
-}
-
-
-var bits_to_string = {
-	MOVE_RIGHT: "move_right",
-	MOVE_LEFT: "move_left",
-	MOVE_DOWN: "move_down",
-	MOVE_UP: "move_up",
-	INTERACT: "interact",
-	LEFT_MOUSE: "left_mouse",
-	RIGHT_MOUSE: "right_mouse",
-}
+var most_recent_consumed_inputs: Dictionary[int, int] # player id : input timestamp
 
 
 func _ready() -> void:
@@ -37,114 +15,109 @@ func _ready() -> void:
 
 func _on_pre_tick() -> void:
 	if multiplayer.is_server():
-		NetworkedClock.pretick.disconnect(_on_pre_tick)
+		_deserialise_client_inputs_into_blobs()
 		return
-
-	_time = NetworkedClock.time_ticks
 
 	if SyncManager.rewinding:
+		var blob := Blobs.get_local_blob()
+		if not blob:
+			return
+		var input_at_timestamp := _retrieve_input(multiplayer.get_unique_id(), NetworkedClock.time_ticks)
+		blob.input._deserialise_inputs(input_at_timestamp)
 		return
 
-	var input_bytes := _serialise_inputs()
-	var input := _deserialised(input_bytes)
-	_insert_input_into_collection(multiplayer.get_unique_id(), input)
-	_inputs_to_transmit[input["timestamp"]] = input_bytes
-	_receive_client_input_collection.rpc_id(1, _inputs_to_transmit.values())
+	var blob := Blobs.get_local_blob()
+	if not blob:
+		return
+
+	if not blob.input:
+		return
+
+	var input_bytes := blob.input._serialise_inputs()
+	blob.input._deserialise_inputs(input_bytes)
+	var timestamp := NetworkedClock.time_ticks # consider timestamping the inputs to be the tick of the world state
+	# considering that the player does inputs on the world state, which is in the past, not the current world state of the server that they don't know about
+	_insert_input_into_collection(multiplayer.get_unique_id(), timestamp, input_bytes)
+	_inputs_to_transmit[timestamp] = input_bytes
+	_receive_client_input_collection.rpc_id(1, _inputs_to_transmit)
 
 
 func _on_player_left(player: Player) -> void:
 	_input_collection.erase(player.get_id())
 
 
-func _insert_input_into_collection(player_id: int, input: Dictionary) -> void:
+func _insert_input_into_collection(player_id: int, timestamp: int, input_bytes: PackedByteArray) -> void:
 	if not player_id in _input_collection.keys():
 		var buffer := RingBuffer.new()
 		_input_collection[player_id] = buffer
 
-	_input_collection[player_id].put(input, input["timestamp"])
+	_input_collection[player_id].put([timestamp, input_bytes], timestamp)
+
+
+func _retrieve_input(player_id: int, target_timestamp: int) -> PackedByteArray:
+	if not _input_collection.has(player_id):
+		# generate empty input
+		return PackedByteArray()
+	var timestamp_and_input = _input_collection[player_id].retrieve(target_timestamp)
+	if not timestamp_and_input:
+		# input doesn't exist at timestamp, predict it
+		return PackedByteArray()
+	var input_timestamp: int = timestamp_and_input[0]
+	if input_timestamp != target_timestamp:
+		# input doesn't exist at timestamp, predict it
+		return PackedByteArray()
+	var input_bytes: PackedByteArray = timestamp_and_input[1]
+	return input_bytes
 
 
 @rpc("unreliable", "any_peer")
-func _receive_client_input_collection(input_array: Array[PackedByteArray]) -> void:
+func _receive_client_input_collection(timestamped_inputs: Dictionary[int, PackedByteArray]) -> void:
 	var sender_id := multiplayer.get_remote_sender_id()
-	var inputs_received: Array[int]
+	var input_timestamps_received: PackedInt32Array
 
-	for serialised_input in input_array:
-		var deserialised_input := _deserialised(serialised_input)
-		var input_timestamp: int = deserialised_input["timestamp"]
-		inputs_received.push_back(input_timestamp)
-		_insert_input_into_collection(sender_id, deserialised_input)
+	for timestamp in timestamped_inputs.keys():
+		input_timestamps_received.push_back(timestamp)
+		_insert_input_into_collection(sender_id, timestamp, timestamped_inputs[timestamp])
 
-	_receive_server_collected_inputs.rpc_id(sender_id, inputs_received)
+	_receive_server_collected_inputs.rpc_id(sender_id, input_timestamps_received)
+
+	#if not most_recent_consumed_inputs.has(sender_id):
+	#	most_recent_consumed_inputs[sender_id] = _input_collection[sender_id].greatest()
 
 
 @rpc("unreliable", "authority")
-func _receive_server_collected_inputs(inputs_received: Array[int]) -> void:
-	for input_timestamp in inputs_received:
+func _receive_server_collected_inputs(input_timestamps_received: PackedInt32Array) -> void:
+	for input_timestamp in input_timestamps_received:
 		_inputs_to_transmit.erase(input_timestamp)
 
 
-func get_value(value_name: StringName, time: int = _time, target: int = multiplayer.get_unique_id()) -> Variant:
-	var input_buffer := _input_collection.get(target, null)
-	if input_buffer == null:
-		return false
-
-	var input = input_buffer.retrieve(time)
-	if not input is Dictionary or input[&"timestamp"] != time:
-		return false
-
-	return input.get(value_name, null)
+@rpc("unreliable", "authority")
+func _acknowledge_input(input_timestamp: int) -> void:
+	most_recent_consumed_inputs[multiplayer.get_unique_id()] = input_timestamp
 
 
-func is_action_pressed(action: StringName, time: int = _time, target: int = multiplayer.get_unique_id()) -> bool:
-	return bool(get_value(action, time, target))
+func sort_out_server(player_id: int) -> void:
+	if most_recent_consumed_inputs.has(player_id):
+		var target_time := most_recent_consumed_inputs[player_id] + 1
+		most_recent_consumed_inputs[player_id] = target_time
+		#set_target_time(target_time)
+		print("target time %s" % target_time)
 
 
-func is_action_just_released(action: StringName, time: int = _time) -> bool:
-	return not is_action_pressed(action, time) and is_action_pressed(action, time-1)
+func _deserialise_client_inputs_into_blobs() -> void:
+	var blobs := Blobs.get_blobs()
+	for blob in blobs:
+		if not blob.input:
+			continue
+
+		var player := blob.get_player()
+		if not player:
+			continue
+
+		var target_timestamp := _get_next_client_input_timestamp(player.get_id())
+		var input_bytes := _retrieve_input(player.get_id(), target_timestamp)
+		blob.input._deserialise_inputs(input_bytes)
 
 
-func is_action_just_pressed(action: StringName, time: int = _time) -> bool:
-	return is_action_pressed(action, time) and not is_action_pressed(action, time-1)
-
-
-func get_vector(left: StringName, right: StringName, up: StringName, down: StringName, time: int = _time) -> Vector2:
-	return Vector2(
-		int(is_action_pressed(right, time)) - int(is_action_pressed(left, time)),
-		int(is_action_pressed(down, time)) - int(is_action_pressed(up, time))
-	).normalized()
-
-
-func _serialise_inputs() -> PackedByteArray:
-	var buffer := StreamPeerBuffer.new()
-
-	buffer.put_64(NetworkedClock.time_ticks)
-
-	var key_inputs: int
-	for code in bits_to_string.keys():
-		key_inputs += code * int(Input.is_action_pressed(bits_to_string[code]))
-	buffer.put_u8(key_inputs)
-
-	var mouse_pos: Vector2 = get_tree().root.get_node("Main/World").get_global_mouse_position()
-	buffer.put_float(mouse_pos.x)
-	buffer.put_float(mouse_pos.y)
-
-	return buffer.data_array
-
-
-func _deserialised(bytes: PackedByteArray) -> Dictionary:
-	var buffer := StreamPeerBuffer.new()
-	buffer.set_data_array(bytes)
-	var out: Dictionary
-
-	out["timestamp"] = buffer.get_64()
-
-	var key_inputs := buffer.get_u8()
-	for code in bits_to_string.keys():
-		out[bits_to_string[code]] = bool(key_inputs & code)
-
-	var mouse_x := buffer.get_float()
-	var mouse_y := buffer.get_float()
-	out["mouse_pos"] = Vector2(mouse_x, mouse_y)
-
-	return out
+func _get_next_client_input_timestamp(player_id: int) -> int:
+	return 1
