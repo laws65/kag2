@@ -5,30 +5,38 @@ var _world_state_buffer := RingBuffer.new(50)
 var _interpolation_buffer_min_size_ticks := 0
 
 
-var _complete_world_state_providers: Array[Array] # [[node, node_name], [node, node_name]]
+var _complete_world_state_providers: Array[Node] # [[node, node_name], [node, node_name]]
 var rewinding := false
 
+var _networked_input := NetworkedInput.new()
+
+var world_tick: int = -1
+
+
 func _ready() -> void:
+	add_child(_networked_input, true)
 	NetworkedClock.pretick.connect(_on_pre_tick)
 	NetworkedClock.posttick.connect(_on_post_tick)
 
-	register_complete_world_state_provider(Players, &"Players")
-	register_complete_world_state_provider(Blobs, &"Blobs")
-	register_complete_world_state_provider(GamemodeManager, &"Gamemode")
-	register_complete_world_state_provider(MapManager, &"Map")
-	register_complete_world_state_provider(NetworkedClock, &"Clock")
+
+	register_complete_world_state_provider(Players)
+	register_complete_world_state_provider(Blobs)
+	register_complete_world_state_provider(GamemodeManager)
+	register_complete_world_state_provider(MapManager)
+	register_complete_world_state_provider(NetworkedClock)
 
 
-func register_complete_world_state_provider(node: Node, node_name: StringName) -> void:
+func register_complete_world_state_provider(node: Node) -> void:
 	assert(node.has_method("get_complete_state_serialised"))
 	assert(node.has_method("deserialise_complete_state"))
 
-	_complete_world_state_providers.push_back([node, node_name])
+	_complete_world_state_providers.push_back(node)
 
 
 func _on_pre_tick() -> void:
 	if not multiplayer.is_server() and not rewinding:
 		_render_world_snapshot_tick()
+	_networked_input.prepare_player_inputs()
 
 
 func _on_post_tick() -> void:
@@ -52,7 +60,7 @@ func _render_world_snapshot_tick() -> void:
 	var target_world_state: Dictionary = _world_state_buffer.retrieve(render_time_ticks)
 	if target_world_state["time"] != render_time_ticks:
 		return
-
+	world_tick = render_time_ticks
 	var render_snapshot: Dictionary = target_world_state["snapshots"]
 	#var render_snapshot: Dictionary = snapshot_buffer[-1 - _interpolation_buffer_min_size_ticks]["snapshots"]
 
@@ -89,9 +97,7 @@ func _transmit_world_state() -> void:
 		to_transmit[blob.get_id()] = snapshot
 	var time_ticks: int = NetworkedClock.time_ticks
 
-	for player_id in multiplayer.get_peers():
-		if NetworkedInput.most_recent_consumed_inputs.has(player_id):
-			NetworkedInput._acknowledge_input.rpc_id(player_id, NetworkedInput.most_recent_consumed_inputs[player_id])
+	_networked_input.transmit_consumed_inputs()
 	_receive_server_blob_snapshots.rpc_id(0, to_transmit, time_ticks)
 
 
@@ -100,7 +106,7 @@ func _receive_server_blob_snapshots(blob_snapshots: Dictionary, snapshot_time_ti
 	var to_insert := {"time": snapshot_time_ticks, "snapshots": blob_snapshots, "authority": true}
 	_world_state_buffer.put(to_insert, snapshot_time_ticks)
 
-	print("receiving world state %s at time %s and acked input %s" % [snapshot_time_ticks, NetworkedClock.time_ticks, NetworkedInput.most_recent_consumed_inputs.get(multiplayer.get_unique_id())])
+	print("receiving world state %s at time %s and acked input %s" % [snapshot_time_ticks, NetworkedClock.time_ticks, _networked_input._most_recent_consumed_inputs.get(multiplayer.get_unique_id())])
 
  # MAKE A SYSTEM WHERE THE SERVER RUNS 1 TICK FOR EACH 1 INPUT
 # USE THE CLIENT CALCULATED PING TO DETERMINE WHICH INPUT THE SERVER SHOULD BE USING
@@ -141,28 +147,21 @@ func _display_ghost_blob(blob_id: int, past_snapshot: Dictionary, future_snapsho
 		interpolation_delta
 	)
 
+
 #region STATE
 func get_complete_world_state() -> Dictionary:
 	var out: Dictionary
-
-	for provider in _complete_world_state_providers:
-		var node: Node = provider[0]
-		var node_name: StringName = provider[1]
-		out[node_name] = node.get_complete_state_serialised()
-
+	for node in _complete_world_state_providers:
+		out[node.name] = node.get_complete_state_serialised()
 	return out
 
 
 func set_complete_world_state(world_state: Dictionary) -> void:
-	for provider in _complete_world_state_providers:
-		var node: Node = provider[0]
-		var node_name: StringName = provider[1]
-		node.deserialise_complete_state(world_state[node_name])
+	for node in _complete_world_state_providers:
+		node.deserialise_complete_state(world_state[node.name])
 
 
 func merge_complete_world_state(world_state: Dictionary) -> void:
-	for provider in _complete_world_state_providers:
-		var node: Node = provider[0]
-		var node_name: StringName = provider[1]
-		node.merge_complete_state(world_state[node_name])
+	for node in _complete_world_state_providers:
+		node.merge_complete_state(world_state[node.name])
 #endregion

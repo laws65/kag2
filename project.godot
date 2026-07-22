@@ -18,7 +18,6 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-BlobSyncer="*uid://bhc3elhd6wkhe"
 Steamworks="*uid://cnodfvffu6ex6"
 Client="*uid://st5hptvwy46a"
 Server="*uid://byisbyvlth6f5"
@@ -29,7 +28,6 @@ NetworkedClock="*uid://cu0skdi6djlqk"
 Network="*uid://cs31w1cq4hxk4"
 GamemodeManager="*uid://bqctqoj88r4c7"
 MapManager="*uid://dolp7a0gpfm1h"
-NetworkedInput="*uid://c1853hagydytd"
 
 [debug]
 

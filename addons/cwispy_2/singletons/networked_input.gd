@@ -1,19 +1,19 @@
 extends Node
+class_name NetworkedInput
 
 
 var _input_collection: Dictionary[int, RingBuffer] # player id: buffer
 
-var _inputs_to_transmit: Dictionary[int, PackedByteArray] # timestamp : input bytes
+var _client_inputs_to_transmit: Dictionary[int, PackedByteArray] # timestamp : input bytes
 
-var most_recent_consumed_inputs: Dictionary[int, int] # player id : input timestamp
+var _most_recent_consumed_inputs: Dictionary[int, int] # player id : input timestamp
 
 
 func _ready() -> void:
-	NetworkedClock.pretick.connect(_on_pre_tick)
 	Players.player_left.connect(_on_player_left)
 
 
-func _on_pre_tick() -> void:
+func prepare_player_inputs() -> void:
 	if multiplayer.is_server():
 		_deserialise_client_inputs_into_blobs()
 		return
@@ -35,15 +35,16 @@ func _on_pre_tick() -> void:
 
 	var input_bytes := blob.input._serialise_inputs()
 	blob.input._deserialise_inputs(input_bytes)
-	var timestamp := NetworkedClock.time_ticks # consider timestamping the inputs to be the tick of the world state
+	var timestamp := SyncManager.world_tick # consider timestamping the inputs to be the tick of the world state
 	# considering that the player does inputs on the world state, which is in the past, not the current world state of the server that they don't know about
 	_insert_input_into_collection(multiplayer.get_unique_id(), timestamp, input_bytes)
-	_inputs_to_transmit[timestamp] = input_bytes
-	_receive_client_input_collection.rpc_id(1, _inputs_to_transmit)
+	_client_inputs_to_transmit[timestamp] = input_bytes
+	_receive_client_input_collection.rpc_id(1, _client_inputs_to_transmit)
 
 
 func _on_player_left(player: Player) -> void:
 	_input_collection.erase(player.get_id())
+	_most_recent_consumed_inputs.erase(player.get_id())
 
 
 func _insert_input_into_collection(player_id: int, timestamp: int, input_bytes: PackedByteArray) -> void:
@@ -114,25 +115,25 @@ func _receive_client_input_collection(timestamped_inputs: Dictionary[int, Packed
 
 	_receive_server_collected_inputs.rpc_id(sender_id, input_timestamps_received)
 
-	#if not most_recent_consumed_inputs.has(sender_id):
-	#	most_recent_consumed_inputs[sender_id] = _input_collection[sender_id].greatest()
+	#if not _most_recent_consumed_inputs.has(sender_id):
+	#	_most_recent_consumed_inputs[sender_id] = _input_collection[sender_id].greatest()
 
 
 @rpc("unreliable", "authority")
 func _receive_server_collected_inputs(input_timestamps_received: PackedInt32Array) -> void:
 	for input_timestamp in input_timestamps_received:
-		_inputs_to_transmit.erase(input_timestamp)
+		_client_inputs_to_transmit.erase(input_timestamp)
 
 
 @rpc("unreliable", "authority")
 func _acknowledge_input(input_timestamp: int) -> void:
-	most_recent_consumed_inputs[multiplayer.get_unique_id()] = input_timestamp
+	_most_recent_consumed_inputs[multiplayer.get_unique_id()] = input_timestamp
 
 
 func sort_out_server(player_id: int) -> void:
-	if most_recent_consumed_inputs.has(player_id):
-		var target_time := most_recent_consumed_inputs[player_id] + 1
-		most_recent_consumed_inputs[player_id] = target_time
+	if _most_recent_consumed_inputs.has(player_id):
+		var target_time := _most_recent_consumed_inputs[player_id] + 1
+		_most_recent_consumed_inputs[player_id] = target_time
 		#set_target_time(target_time)
 		print("target time %s" % target_time)
 
@@ -154,3 +155,9 @@ func _deserialise_client_inputs_into_blobs() -> void:
 
 func _get_next_client_input_timestamp(player_id: int) -> int:
 	return 1
+
+
+func transmit_consumed_inputs() -> void:
+	for player_id in multiplayer.get_peers():
+		if _most_recent_consumed_inputs.has(player_id):
+			_acknowledge_input.rpc_id(player_id, _most_recent_consumed_inputs[player_id])
